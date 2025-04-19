@@ -1,39 +1,70 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
-import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
-import 'react-native-reanimated';
-
-import { useColorScheme } from '@/hooks/useColorScheme';
-
-// Prevent the splash screen from auto-hiding before asset loading is complete.
-SplashScreen.preventAutoHideAsync();
-
-export default function RootLayout() {
-  const colorScheme = useColorScheme();
-  const [loaded] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
-  });
-
-  useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync();
-    }
-  }, [loaded]);
-
-  if (!loaded) {
-    return null;
-  }
-
-  return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
-  );
+import { useEffect } from "react"
+import { SafeAreaView, StyleSheet, KeyboardAvoidingView, Platform, View } from "react-native"
+import { Slot } from "expo-router"
+import { PaperProvider, MD3LightTheme } from "react-native-paper"
+import BottomNavigation from "@/components/bottomNavigation"
+import { Camera } from "expo-camera"
+import { StrictMode } from 'react';
+import Header from '@/components/header'
+import { useAuth } from "@/hooks/useAuth"
+const theme = {
+    ...MD3LightTheme,
+    colors: {
+        ...MD3LightTheme.colors,
+        background: "#ffffff",
+        surface: "#ffffff",
+    },
 }
+
+export default function Layout() {
+    const { user } = useAuth()
+
+    useEffect(() => {
+        (async () => {
+            await Camera.requestCameraPermissionsAsync()
+        })()
+    }, [])
+
+    return (
+        <StrictMode>
+            <PaperProvider theme={theme}>
+                <SafeAreaView testID="SafeAreaView" style={styles.safe}>
+                    <KeyboardAvoidingView
+                        testID="KeyboardAvoidingView"
+                        style={styles.keyboardAvoiding}
+                        behavior={Platform.OS === "ios" ? "padding" : undefined}
+                        keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
+                    >
+                        <View testID="KeyboardAvoidingView" style={styles.container}>
+                            <View style={styles.header}>
+                                <Header />
+                            </View>
+                            <Slot />
+                        </View>
+                    </KeyboardAvoidingView>
+                    {user && <BottomNavigation />}
+                </SafeAreaView>
+            </PaperProvider>
+        </StrictMode>
+
+    )
+}
+
+const styles = StyleSheet.create({
+    header: {
+        marginBottom: 24,
+    },
+    safe: {
+        flex: 1,
+        backgroundColor: theme.colors.background,
+    },
+    keyboardAvoiding: {
+        flex: 1,
+    },
+    container: {
+        flex: 1,
+        paddingHorizontal: 16,
+        paddingTop: 16,
+        paddingBottom: 16,
+    },
+})
