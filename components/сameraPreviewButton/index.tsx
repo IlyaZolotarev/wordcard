@@ -1,10 +1,11 @@
 import React, { useRef, useState } from "react"
-import { View, TouchableOpacity, StyleSheet, Modal, Dimensions } from "react-native"
+import { View, TouchableOpacity, StyleSheet, Modal } from "react-native"
 import { CameraView, useCameraPermissions } from "expo-camera"
 import { ActivityIndicator } from "react-native-paper"
 import { BlurView } from "expo-blur"
 import { MaterialCommunityIcons } from "@expo/vector-icons"
-
+import * as FileSystem from "expo-file-system"
+import uuid from "react-native-uuid";
 type Props = {
     onPhoto: (uri: string) => void
 }
@@ -13,6 +14,7 @@ export default function CameraPreviewButton({ onPhoto }: Props) {
     const [permission, requestPermission] = useCameraPermissions()
     const [isModalVisible, setIsModalVisible] = useState(false)
     const cameraRef = useRef<any>(null)
+    const [cameraReady, setCameraReady] = useState(false)
 
     if (!permission) return <ActivityIndicator />
     if (!permission.granted) {
@@ -24,10 +26,23 @@ export default function CameraPreviewButton({ onPhoto }: Props) {
     }
 
     const takePicture = async () => {
-        if (cameraRef.current) {
-            const photo = await cameraRef.current.takePictureAsync()
-            onPhoto(photo.uri)
-            setIsModalVisible(false)
+        if (cameraRef.current && cameraReady) {
+            try {
+                const photo = await cameraRef.current.takePictureAsync({ base64: false })
+
+                const fileName = `${uuid.v4()}.jpg`
+                const newPath = FileSystem.documentDirectory + fileName
+
+                await FileSystem.copyAsync({
+                    from: photo.uri,
+                    to: newPath,
+                })
+
+                onPhoto(newPath)
+                setIsModalVisible(false)
+            } catch (err) {
+                console.warn("Ошибка при съёмке:", err)
+            }
         }
     }
 
@@ -47,6 +62,7 @@ export default function CameraPreviewButton({ onPhoto }: Props) {
                     ref={cameraRef}
                     style={styles.fullCamera}
                     facing="back"
+                    onCameraReady={() => setCameraReady(true)}
                 >
                     <TouchableOpacity onPress={takePicture} style={styles.captureButton}>
                         <MaterialCommunityIcons name="camera" size={28} color="#000" />

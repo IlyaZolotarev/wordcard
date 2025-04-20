@@ -1,18 +1,19 @@
 import { useState } from "react"
-import CameraPreviewButton from '@/components/сameraPreviewButton'
+import CameraPreviewButton from "@/components/сameraPreviewButton"
 import { View, StyleSheet, TouchableOpacity } from "react-native"
-import CategoryList from '@/components/categoryList'
-import { MaterialCommunityIcons } from '@expo/vector-icons'
+import CategoryList from "@/components/categoryList"
+import { MaterialCommunityIcons } from "@expo/vector-icons"
 import CreateCategoryModal from "@/components/modals/createCategoryModal"
 import { supabase } from "@/lib/supabase"
 import { useAuth } from "@/hooks/useAuth"
+import { router } from "expo-router"
 
 export default function Home() {
     const [showModal, setShowModal] = useState(false)
     const [refreshTrigger, setRefreshTrigger] = useState(0)
     const { user } = useAuth()
 
-    const handleCreate = async (name: string) => {
+    const handleCreateCategory = async (name: string) => {
         if (!user) return
 
         const { error } = await supabase
@@ -26,27 +27,34 @@ export default function Home() {
         }
     }
 
+    const handlePhotoTaken = (uri: string) => {
+        if (!user) return
+
+        router.push({
+            pathname: "/create",
+            params: { image: uri },
+        })
+    }
+
     return (
-        <>
-            <View style={styles.content}>
-                <View style={styles.previewCameraWrapper}>
-                    <CameraPreviewButton onPhoto={() => { }} />
-                </View>
-                <CategoryList refreshTrigger={refreshTrigger} />
-                <TouchableOpacity
-                    style={styles.createCategoryBtn}
-                    onPress={() => setShowModal(true)}
-                >
-                    <MaterialCommunityIcons name="plus" size={24} color="#000" />
-                    <MaterialCommunityIcons name="folder-outline" size={24} color="#000" style={{ marginLeft: 8 }} />
-                </TouchableOpacity>
-                <CreateCategoryModal
-                    visible={showModal}
-                    onClose={() => setShowModal(false)}
-                    onSubmit={handleCreate}
-                />
+        <View style={styles.content}>
+            <View style={styles.previewCameraWrapper}>
+                <CameraPreviewButton onPhoto={handlePhotoTaken} />
             </View>
-        </>
+            <CategoryList refreshTrigger={refreshTrigger} />
+            <TouchableOpacity
+                style={styles.createCategoryBtn}
+                onPress={() => setShowModal(true)}
+            >
+                <MaterialCommunityIcons name="plus" size={24} color="#000" />
+                <MaterialCommunityIcons name="folder-outline" size={24} color="#000" style={{ marginLeft: 8 }} />
+            </TouchableOpacity>
+            <CreateCategoryModal
+                visible={showModal}
+                onClose={() => setShowModal(false)}
+                onSubmit={handleCreateCategory}
+            />
+        </View>
     )
 }
 

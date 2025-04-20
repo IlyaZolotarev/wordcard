@@ -11,8 +11,9 @@ import {
     BackHandler,
 } from "react-native"
 import { MaterialCommunityIcons } from "@expo/vector-icons"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { supabase } from "@/lib/supabase"
+import * as Haptics from "expo-haptics"
 
 interface Props {
     visible: boolean
@@ -29,13 +30,17 @@ export default function EditCategoryModal({
     initialName,
     onUpdated,
 }: Props) {
+    const inputRef = useRef<TextInput>(null)
     const [name, setName] = useState(initialName)
     const [loading, setLoading] = useState(false)
     const [hasError, setHasError] = useState(false)
     const [confirmDelete, setConfirmDelete] = useState(false)
 
     useEffect(() => {
-        if (visible) setName(initialName)
+        if (visible) {
+            setName(initialName)
+            setTimeout(() => inputRef.current?.focus(), 100)
+        }
     }, [visible, initialName])
 
     useEffect(() => {
@@ -57,6 +62,7 @@ export default function EditCategoryModal({
     const handleUpdate = async () => {
         if (!name.trim()) {
             setHasError(true)
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning)
             return
         }
 
@@ -84,6 +90,9 @@ export default function EditCategoryModal({
         }
 
         setLoading(true)
+
+        await supabase.from("cards").delete().eq("category_id", categoryId)
+
         const { error } = await supabase
             .from("categories")
             .delete()
@@ -109,6 +118,7 @@ export default function EditCategoryModal({
                     <Pressable style={styles.modal} onPress={() => { }}>
                         <MaterialCommunityIcons name="folder-outline" size={48} color="#666" />
                         <TextInput
+                            ref={inputRef}
                             value={name}
                             onChangeText={(text) => {
                                 setName(text)

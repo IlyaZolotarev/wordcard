@@ -9,6 +9,7 @@ import {
 } from "react-native"
 import { useEffect, useState } from "react"
 import { useAuth } from "@/hooks/useAuth"
+import * as Haptics from "expo-haptics"
 
 export default function Header() {
     const router = useRouter()
@@ -21,6 +22,7 @@ export default function Header() {
     const handleSubmit = () => {
         if (!query.trim()) {
             setHasError(true)
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning)
             return
         }
         router.push({ pathname: "/search", params: { q: query } })
@@ -40,7 +42,13 @@ export default function Header() {
                         <IconButton
                             icon="arrow-left"
                             size={24}
-                            onPress={() => router.back()}
+                            onPress={() => {
+                                if (pathname.includes("search")) {
+                                    router.replace("/home")
+                                } else {
+                                    router.back()
+                                }
+                            }}
                         />
                     )}
                     <View style={styles.searchContainer}>
@@ -79,8 +87,8 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1,
         borderColor: "#ddd",
         flex: 1,
-        backgroundColor: "transparent",
         height: 44,
+        color: 'black'
     },
     inputError: {
         borderColor: "red",

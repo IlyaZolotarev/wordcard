@@ -11,7 +11,8 @@ import {
     ActivityIndicator,
 } from "react-native"
 import { MaterialCommunityIcons } from "@expo/vector-icons"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
+import * as Haptics from "expo-haptics"
 
 type Props = {
     visible: boolean
@@ -23,6 +24,7 @@ export default function CreateCategoryModal({ visible, onClose, onSubmit }: Prop
     const [name, setName] = useState("")
     const [hasError, setHasError] = useState(false)
     const [loading, setLoading] = useState(false)
+    const inputRef = useRef<TextInput>(null)
 
     useEffect(() => {
         const backAction = () => {
@@ -40,11 +42,21 @@ export default function CreateCategoryModal({ visible, onClose, onSubmit }: Prop
         }
     }, [visible, loading])
 
+    useEffect(() => {
+        if (visible) {
+            setName("")
+            setHasError(false)
+            setTimeout(() => inputRef.current?.focus(), 100)
+        }
+    }, [visible])
+
     const handleSubmit = async () => {
         if (!name.trim()) {
             setHasError(true)
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning)
             return
         }
+
         setLoading(true)
         await onSubmit(name)
         setLoading(false)
@@ -69,6 +81,7 @@ export default function CreateCategoryModal({ visible, onClose, onSubmit }: Prop
                     <Pressable style={styles.modal} onPress={() => { }}>
                         <MaterialCommunityIcons name="folder-outline" size={48} color="#666" />
                         <TextInput
+                            ref={inputRef}
                             value={name}
                             onChangeText={(text) => {
                                 setName(text)

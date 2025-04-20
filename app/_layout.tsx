@@ -7,6 +7,8 @@ import { Camera } from "expo-camera"
 import { StrictMode } from 'react';
 import Header from '@/components/header'
 import { useAuth } from "@/hooks/useAuth"
+import { Buffer } from "buffer"
+global.Buffer = Buffer
 const theme = {
     ...MD3LightTheme,
     colors: {
