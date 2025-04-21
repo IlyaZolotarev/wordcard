@@ -1,14 +1,22 @@
-import { useEffect } from "react"
-import { SafeAreaView, StyleSheet, KeyboardAvoidingView, Platform, View } from "react-native"
-import { Slot } from "expo-router"
-import { PaperProvider, MD3LightTheme } from "react-native-paper"
-import BottomNavigation from "@/components/bottomNavigation"
-import { Camera } from "expo-camera"
-import { StrictMode } from 'react';
-import Header from '@/components/header'
-import { useAuth } from "@/hooks/useAuth"
-import { Buffer } from "buffer"
-global.Buffer = Buffer
+import { useEffect } from "react";
+import {
+    SafeAreaView,
+    StyleSheet,
+    KeyboardAvoidingView,
+    Platform,
+    View,
+} from "react-native";
+import { Slot } from "expo-router";
+import { PaperProvider, MD3LightTheme } from "react-native-paper";
+import BottomNavigation from "@/components/bottomNavigation";
+import { Camera } from "expo-camera";
+import Header from "@/components/header";
+import { useAuth } from "@/hooks/useAuth";
+import { Buffer } from "buffer";
+import { StoreContext } from "@/stores/storeContext";
+import { rootStore } from "@/stores/rootStore";
+
+global.Buffer = Buffer;
 const theme = {
     ...MD3LightTheme,
     colors: {
@@ -16,19 +24,19 @@ const theme = {
         background: "#ffffff",
         surface: "#ffffff",
     },
-}
+};
 
 export default function Layout() {
-    const { user } = useAuth()
+    const { user } = useAuth();
 
     useEffect(() => {
         (async () => {
-            await Camera.requestCameraPermissionsAsync()
-        })()
-    }, [])
+            await Camera.requestCameraPermissionsAsync();
+        })();
+    }, []);
 
     return (
-        <StrictMode>
+        <StoreContext.Provider value={rootStore}>
             <PaperProvider theme={theme}>
                 <SafeAreaView testID="SafeAreaView" style={styles.safe}>
                     <KeyboardAvoidingView
@@ -38,18 +46,19 @@ export default function Layout() {
                         keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
                     >
                         <View testID="KeyboardAvoidingView" style={styles.container}>
-                            {user && <View style={styles.header}>
-                                <Header />
-                            </View>}
+                            {user && (
+                                <View style={styles.header}>
+                                    <Header />
+                                </View>
+                            )}
                             <Slot />
                         </View>
                     </KeyboardAvoidingView>
                     {user && <BottomNavigation />}
                 </SafeAreaView>
             </PaperProvider>
-        </StrictMode>
-
-    )
+        </StoreContext.Provider>
+    );
 }
 
 const styles = StyleSheet.create({
@@ -69,4 +78,4 @@ const styles = StyleSheet.create({
         paddingTop: 16,
         paddingBottom: 16,
     },
-})
+});

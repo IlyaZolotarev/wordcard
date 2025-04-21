@@ -17,13 +17,13 @@ import * as Haptics from "expo-haptics"
 type Props = {
     visible: boolean
     onClose: () => void
-    onSubmit: (name: string) => Promise<void>
+    onSubmit: (name: string) => void
+    loading: boolean
 }
 
-export default function CreateCategoryModal({ visible, onClose, onSubmit }: Props) {
+export default function CreateCategoryModal({ visible, onClose, onSubmit, loading }: Props) {
     const [name, setName] = useState("")
     const [hasError, setHasError] = useState(false)
-    const [loading, setLoading] = useState(false)
     const inputRef = useRef<TextInput>(null)
 
     useEffect(() => {
@@ -56,10 +56,7 @@ export default function CreateCategoryModal({ visible, onClose, onSubmit }: Prop
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning)
             return
         }
-
-        setLoading(true)
-        await onSubmit(name)
-        setLoading(false)
+        onSubmit(name)
         setName("")
         setHasError(false)
         onClose()
