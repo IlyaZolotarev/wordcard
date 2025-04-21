@@ -38,9 +38,9 @@ export default function Layout() {
                         keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
                     >
                         <View testID="KeyboardAvoidingView" style={styles.container}>
-                            <View style={styles.header}>
+                            {user && <View style={styles.header}>
                                 <Header />
-                            </View>
+                            </View>}
                             <Slot />
                         </View>
                     </KeyboardAvoidingView>

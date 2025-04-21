@@ -152,7 +152,7 @@ export default function CreateScreen() {
                         <ActivityIndicator size="small" color="#aaa" />
                     ) : categories.length ? (
                         <Text style={styles.dropdownText}>
-                            {selectedCategory?.name || "Выбери категорию"}
+                            {selectedCategory?.name}
                         </Text>
                     ) : (
                         <Ionicons name="alert-circle-outline" size={20} color="#aaa" />
