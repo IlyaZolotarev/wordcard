@@ -17,7 +17,6 @@ import SaveButton from "./components/saveButton";
 
 import { useAuth } from "@/hooks/useAuth";
 import { compressAndUploadImage } from "@/lib/upload";
-import { triggerShake } from "@/lib/utils";
 import { useStores } from "@/stores/storeContext";
 
 
