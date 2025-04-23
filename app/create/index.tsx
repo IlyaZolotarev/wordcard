@@ -3,34 +3,33 @@ import {
     View,
     StyleSheet,
     Image,
-    TouchableOpacity,
-    ActivityIndicator,
     Pressable,
-    Animated,
 } from "react-native";
-import { useLocalSearchParams, router } from "expo-router";
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import CreateCategoryModal from "@/components/modals/createCategoryModal";
-import { supabase } from "@/lib/supabase";
-import { useAuth } from "@/hooks/useAuth";
-import * as Haptics from "expo-haptics";
-import { compressAndUploadImage } from "@/lib/upload";
-import * as FileSystem from "expo-file-system";
-import { triggerShake } from "@/lib/utils";
-import WordInputs from "./components/wordInputs";
-import CategorySelector from "./components/categorySelector";
-import { useStores } from "@/stores/storeContext";
 import { observer } from "mobx-react-lite"
+import { useLocalSearchParams, router } from "expo-router";
+import { supabase } from "@/lib/supabase";
+import * as Haptics from "expo-haptics";
+import * as FileSystem from "expo-file-system";
+import CreateCategoryModal from "@/components/modals/createCategoryModal";
+import CategorySelector from "./components/categorySelector";
+import WordInputs from "./components/wordInputs";
+import SaveButton from "./components/saveButton";
+
+import { useAuth } from "@/hooks/useAuth";
+import { compressAndUploadImage } from "@/lib/upload";
+import { triggerShake } from "@/lib/utils";
+import { useStores } from "@/stores/storeContext";
+
 
 const CreateScreen = () => {
-    const { createStore } = useStores();
+    const { createStore, categoryStore } = useStores();
     const { image } = useLocalSearchParams();
     const { user } = useAuth();
     const [modalVisible, setModalVisible] = useState(false);
     const [dropdownVisible, setDropdownVisible] = useState(false);
     const [savingPreloader, setSavingPreloader] = useState(false);
     const imageUri = Array.isArray(image) ? image[0] : image;
-    const editModalIconShake = useRef(new Animated.Value(0)).current;
+    const addCategoryButtonRef = useRef<{ addCategoryButtonShake: () => void }>(null)
     const wordInputsRef = useRef<{ shakeWord: () => void; shakeTransWord: () => void }>(null)
 
     const handleSave = async () => {
@@ -48,8 +47,8 @@ const CreateScreen = () => {
             return;
         }
 
-        if (!createStore.selectedCategory) {
-            triggerShake(editModalIconShake);
+        if (!categoryStore.selectedCategory) {
+            addCategoryButtonRef.current?.addCategoryButtonShake()
             return;
         }
 
@@ -76,9 +75,9 @@ const CreateScreen = () => {
 
         const { error } = await supabase.from("cards").insert({
             word: createStore.word,
-            transWord: createStore.transWord, //TODO: Add to table
+            trans_word: createStore.transWord,
             image_url: finalImageUrl,
-            category_id: createStore.selectedCategory.id,
+            category_id: categoryStore.selectedCategory.id,
             user_id: user.id,
         });
 
@@ -94,7 +93,7 @@ const CreateScreen = () => {
     };
 
     const handleCreateCategory = (name: string) => {
-        createStore.createCategory(name, user);
+        categoryStore.createCategory(name, user);
     };
 
     return (
@@ -107,39 +106,14 @@ const CreateScreen = () => {
             </View>
             <Image source={{ uri: imageUri }} style={styles.image} />
             <View style={styles.categoriesWrapper}>
-                {/* TODO: Add shaking */}
                 <CategorySelector />
             </View>
-            <View style={styles.saveButtonWrapper}>
-                <Animated.View
-                    style={{ transform: [{ translateX: editModalIconShake }] }}
-                >
-                    <TouchableOpacity
-                        style={styles.addBtn}
-                        onPress={() => setModalVisible(true)}
-                    >
-                        <Ionicons name="add-circle-outline" size={24} color="#333" />
-                    </TouchableOpacity>
-                </Animated.View>
-
-                <TouchableOpacity
-                    style={styles.saveBtn}
-                    onPress={handleSave}
-                    disabled={savingPreloader}
-                >
-                    {savingPreloader ? (
-                        <ActivityIndicator size={38} color="#fff" />
-                    ) : (
-                        <MaterialCommunityIcons name="check" size={38} color="#fff" />
-                    )}
-                </TouchableOpacity>
-            </View>
-            {/* TODO: Add shaking */}
+            <SaveButton ref={addCategoryButtonRef} setModalVisible={setModalVisible} onSave={handleSave} loading={savingPreloader} />
             <CreateCategoryModal
                 visible={modalVisible}
                 onClose={() => setModalVisible(false)}
                 onSubmit={handleCreateCategory}
-                loading={createStore.createCategoriesLoading}
+                loading={categoryStore.createCategoriesLoading}
             />
         </Pressable>
     );
@@ -163,14 +137,9 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         marginBottom: 24,
     },
-    addBtn: {
+    addCategoryButton: {
         alignItems: "center",
         marginTop: 8,
-    },
-    saveButtonWrapper: {
-        flex: 1,
-        flexDirection: "column",
-        justifyContent: "space-between",
     },
     saveBtn: {
         alignSelf: "center",

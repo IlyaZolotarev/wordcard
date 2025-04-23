@@ -9,151 +9,165 @@ import {
     Pressable,
     ActivityIndicator,
     BackHandler,
-} from "react-native"
-import { MaterialCommunityIcons } from "@expo/vector-icons"
-import { useEffect, useState, useRef } from "react"
-import { supabase } from "@/lib/supabase"
-import * as Haptics from "expo-haptics"
+    Animated,
+} from "react-native";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useEffect, useState, useRef } from "react";
+import { triggerShake } from "@/lib/utils";
+import { useStores } from "@/stores/storeContext";
+import { useAuth } from "@/hooks/useAuth";
+import { observer } from "mobx-react-lite";
 
 interface Props {
-    visible: boolean
-    onClose: () => void
-    categoryId: string
-    initialName: string
-    onUpdated: () => void
+    visible: boolean;
+    onClose: () => void;
+    categoryId: string;
 }
 
-export default function EditCategoryModal({
-    visible,
-    onClose,
-    categoryId,
-    initialName,
-    onUpdated,
-}: Props) {
-    const inputRef = useRef<TextInput>(null)
-    const [name, setName] = useState(initialName)
-    const [loading, setLoading] = useState(false)
-    const [hasError, setHasError] = useState(false)
-    const [confirmDelete, setConfirmDelete] = useState(false)
+const EditCategoryModal = ({ visible, onClose, categoryId }: Props) => {
+    const { categoryStore } = useStores();
+    const inputRef = useRef<TextInput>(null);
+    const inputShake = useRef(new Animated.Value(0)).current;
+    const currentCategory = categoryStore.categories.find(
+        (category) => category.id === categoryId
+    );
+    const [categoryName, setCategoryName] = useState("");
+    const [confirmDelete, setConfirmDelete] = useState(false);
+    const { user } = useAuth();
+    const deleteTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     useEffect(() => {
-        if (visible) {
-            setName(initialName)
-            setTimeout(() => inputRef.current?.focus(), 100)
+        if (currentCategory) {
+            setCategoryName(currentCategory.name);
         }
-    }, [visible, initialName])
+    }, [currentCategory]);
 
     useEffect(() => {
         const backAction = () => {
             if (visible) {
-                onClose()
-                return true
+                onClose();
+                return true;
             }
-            return false
-        }
+            return false;
+        };
 
-        const sub = BackHandler.addEventListener("hardwareBackPress", backAction)
+        const sub = BackHandler.addEventListener("hardwareBackPress", backAction);
+
         return () => {
-            sub.remove()
-            setHasError(false)
+            sub.remove();
+            if (deleteTimeoutRef.current) {
+                setConfirmDelete(false);
+                clearTimeout(deleteTimeoutRef.current);
+            }
+        };
+    }, [visible]);
+
+    const handleUpdate = () => {
+        if (!categoryName.trim() || currentCategory?.name === categoryName) {
+            triggerShake(inputShake);
+            return;
         }
-    }, [visible])
 
-    const handleUpdate = async () => {
-        if (!name.trim()) {
-            setHasError(true)
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning)
-            return
-        }
-
-        setLoading(true)
-        const { error } = await supabase
-            .from("categories")
-            .update({ name })
-            .eq("id", categoryId)
-
-        setLoading(false)
-
-        if (!error) {
-            onUpdated()
-            onClose()
-        } else {
-            setHasError(true)
-        }
-    }
+        categoryStore.updateCategory(user, categoryId, categoryName, onClose);
+    };
 
     const handleDelete = async () => {
         if (!confirmDelete) {
-            setConfirmDelete(true)
-            setTimeout(() => setConfirmDelete(false), 2000)
-            return
+            setConfirmDelete(true);
+            deleteTimeoutRef.current = setTimeout(() => {
+                setConfirmDelete(false);
+            }, 2000);
+            return;
         }
 
-        setLoading(true)
+        categoryStore.deleteCategory(user, categoryId, onClose);
+    };
 
-        await supabase.from("cards").delete().eq("category_id", categoryId)
-
-        const { error } = await supabase
-            .from("categories")
-            .delete()
-            .eq("id", categoryId)
-
-        setLoading(false)
-
-        if (!error) {
-            onUpdated()
-            onClose()
-        } else {
-            setHasError(true)
-        }
-    }
+    const onChangeInput = (text: string) => {
+        setCategoryName(text);
+    };
 
     return (
-        <Modal visible={visible} transparent animationType="fade" statusBarTranslucent>
+        <Modal
+            visible={visible}
+            transparent
+            animationType="fade"
+            statusBarTranslucent
+        >
             <Pressable style={styles.overlay} onPress={onClose}>
                 <KeyboardAvoidingView
                     behavior={Platform.OS === "ios" ? "padding" : undefined}
                     style={styles.modalWrapper}
                 >
                     <Pressable style={styles.modal} onPress={() => { }}>
-                        <MaterialCommunityIcons name="folder-outline" size={48} color="#666" />
-                        <TextInput
-                            ref={inputRef}
-                            value={name}
-                            onChangeText={(text) => {
-                                setName(text)
-                                if (hasError && text.trim()) setHasError(false)
-                            }}
-                            placeholder="..."
-                            placeholderTextColor="#aaa"
-                            style={[styles.input, hasError && styles.inputError]}
+                        <MaterialCommunityIcons
+                            name="folder-outline"
+                            size={48}
+                            color="#666"
                         />
-
+                        <Animated.View
+                            style={[
+                                styles.input,
+                                { transform: [{ translateX: inputShake }] },
+                            ]}
+                        >
+                            <TextInput
+                                ref={inputRef}
+                                value={categoryName}
+                                onChangeText={onChangeInput}
+                                placeholder="..."
+                                placeholderTextColor="#aaa"
+                            />
+                        </Animated.View>
                         <View style={styles.actions}>
-                            <TouchableOpacity onPress={onClose} disabled={loading}>
+                            <TouchableOpacity
+                                onPress={onClose}
+                                disabled={
+                                    categoryStore.updateCategoryLoading ||
+                                    categoryStore.deleteCategoryLoading
+                                }
+                            >
                                 <MaterialCommunityIcons name="close" size={28} color="#333" />
                             </TouchableOpacity>
-                            {loading ? (
+                            {categoryStore.updateCategoryLoading ? (
                                 <ActivityIndicator />
                             ) : (
-                                <TouchableOpacity onPress={handleUpdate}>
+                                <TouchableOpacity
+                                    onPress={handleUpdate}
+                                    disabled={
+                                        categoryStore.updateCategoryLoading ||
+                                        categoryStore.deleteCategoryLoading
+                                    }
+                                >
                                     <MaterialCommunityIcons name="check" size={28} color="#333" />
                                 </TouchableOpacity>
                             )}
-                            <TouchableOpacity onPress={handleDelete}>
-                                <MaterialCommunityIcons
-                                    name={confirmDelete ? "alert-outline" : "trash-can-outline"}
-                                    size={28}
-                                    color={confirmDelete ? "orange" : "red"}
-                                />
-                            </TouchableOpacity>
+                            {categoryStore.deleteCategoryLoading ? (
+                                <ActivityIndicator />
+                            ) : (
+                                <TouchableOpacity
+                                    onPress={handleDelete}
+                                    disabled={
+                                        categoryStore.updateCategoryLoading ||
+                                        categoryStore.deleteCategoryLoading
+                                    }
+                                >
+                                    <MaterialCommunityIcons
+                                        name={confirmDelete ? "alert-outline" : "trash-can-outline"}
+                                        color={confirmDelete ? "orange" : "red"}
+                                        size={28}
+                                    />
+                                </TouchableOpacity>
+                            )}
                         </View>
                     </Pressable>
                 </KeyboardAvoidingView>
             </Pressable>
         </Modal>
-    )
-}
+    );
+};
+
+export default observer(EditCategoryModal);
 
 const styles = StyleSheet.create({
     overlay: {
@@ -186,9 +200,6 @@ const styles = StyleSheet.create({
         color: "#000",
         textAlign: "left",
     },
-    inputError: {
-        borderColor: "red",
-    },
     actions: {
         flexDirection: "row",
         justifyContent: "space-between",
@@ -196,4 +207,4 @@ const styles = StyleSheet.create({
         paddingTop: 8,
         paddingHorizontal: 24,
     },
-})
+});

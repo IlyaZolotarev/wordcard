@@ -9,55 +9,26 @@ import { Text } from "react-native-paper"
 import { MaterialCommunityIcons } from "@expo/vector-icons"
 import { useEffect, useState } from "react"
 import { useRouter } from "expo-router"
-import { supabase } from "@/lib/supabase"
 import { useAuth } from "@/hooks/useAuth"
 import EditCategoryModal from "@/components/modals/editCategoryModal"
+import { useStores } from "@/stores/storeContext"
+import { observer } from "mobx-react-lite"
 
-interface Category {
-    id: string
-    name: string
-    image_url?: string
-}
 
-interface Props {
-    refreshTrigger?: number
-}
-
-export default function CategoryList({ refreshTrigger }: Props) {
+const CategoryList = () => {
+    const { categoryStore } = useStores()
     const { user } = useAuth()
     const router = useRouter()
-    const [categories, setCategories] = useState<Category[]>([])
-    const [loading, setLoading] = useState(true)
-    const [error, setError] = useState("")
 
-    const [editingId, setEditingId] = useState<string | null>(null)
-    const [editingName, setEditingName] = useState("")
-
-    const fetchCategories = async () => {
-        if (!user) return
-
-        setLoading(true)
-        const { data, error } = await supabase
-            .from("categories")
-            .select("*")
-            .eq("user_id", user.id)
-
-        if (error) {
-            setError(error.message)
-        } else {
-            setCategories(data || [])
-        }
-        setLoading(false)
-    }
+    const [categoryId, setCategoryId] = useState<string | null>(null)
 
     useEffect(() => {
-        fetchCategories()
-    }, [user, refreshTrigger])
+        categoryStore.fetchCategories(user)
+    }, [user])
 
-    if (loading) return <ActivityIndicator style={{ marginTop: 20 }} />
-    if (error) return <Text style={styles.errorText}>{error}</Text>
+    if (categoryStore.fetchCategoriesLoading) return <ActivityIndicator style={{ marginTop: 20 }} />
 
-    if (categories.length === 0) {
+    if (!categoryStore.fetchCategoriesLoading && categoryStore.categories.length === 0) {
         return (
             <View style={styles.emptyWrapper}>
                 <View style={styles.emptyCard}>
@@ -70,7 +41,7 @@ export default function CategoryList({ refreshTrigger }: Props) {
     return (
         <>
             <FlatList
-                data={categories}
+                data={categoryStore.categories}
                 keyExtractor={(item) => item.id}
                 numColumns={2}
                 contentContainerStyle={styles.list}
@@ -87,8 +58,7 @@ export default function CategoryList({ refreshTrigger }: Props) {
                             </TouchableOpacity>
                             <TouchableOpacity
                                 onPress={() => {
-                                    setEditingId(item.id)
-                                    setEditingName(item.name)
+                                    setCategoryId(item.id)
                                 }}
                                 style={styles.editIconBtn}
                                 hitSlop={10}
@@ -99,17 +69,16 @@ export default function CategoryList({ refreshTrigger }: Props) {
                     </View>
                 )}
             />
-
             <EditCategoryModal
-                visible={!!editingId}
-                onClose={() => setEditingId(null)}
-                categoryId={editingId || ""}
-                initialName={editingName}
-                onUpdated={fetchCategories}
+                visible={!!categoryId}
+                onClose={() => setCategoryId(null)}
+                categoryId={categoryId || ""}
             />
         </>
     )
 }
+
+export default observer(CategoryList)
 
 const styles = StyleSheet.create({
     list: {

@@ -4,28 +4,19 @@ import { View, StyleSheet, TouchableOpacity } from "react-native"
 import CategoryList from "@/components/categoryList"
 import { MaterialCommunityIcons } from "@expo/vector-icons"
 import CreateCategoryModal from "@/components/modals/createCategoryModal"
-import { supabase } from "@/lib/supabase"
 import { useAuth } from "@/hooks/useAuth"
 import { router } from "expo-router"
+import { useStores } from "@/stores/storeContext"
+import { observer } from "mobx-react-lite"
 
-export default function Home() {
+const HomeScreen = () => {
+    const { categoryStore } = useStores()
     const [showModal, setShowModal] = useState(false)
-    const [refreshTrigger, setRefreshTrigger] = useState(0)
     const { user } = useAuth()
 
-    const handleCreateCategory = async (name: string) => {
-        if (!user) return
-
-        const { error } = await supabase
-            .from("categories")
-            .insert({ name, user_id: user.id })
-
-        if (error) {
-            console.error("Ошибка при создании категории:", error.message)
-        } else {
-            setRefreshTrigger(prev => prev + 1)
-        }
-    }
+    const handleCreateCategory = (name: string) => {
+        categoryStore.createCategory(name, user);
+    };
 
     const handlePhotoTaken = (uri: string) => {
         if (!user) return
@@ -41,7 +32,7 @@ export default function Home() {
             <View style={styles.previewCameraWrapper}>
                 <CameraPreviewButton onPhoto={handlePhotoTaken} />
             </View>
-            <CategoryList refreshTrigger={refreshTrigger} />
+            <CategoryList />
             <TouchableOpacity
                 style={styles.createCategoryBtn}
                 onPress={() => setShowModal(true)}
@@ -53,10 +44,13 @@ export default function Home() {
                 visible={showModal}
                 onClose={() => setShowModal(false)}
                 onSubmit={handleCreateCategory}
+                loading={categoryStore.createCategoriesLoading}
             />
         </View>
     )
 }
+
+export default observer(HomeScreen)
 
 const styles = StyleSheet.create({
     content: {

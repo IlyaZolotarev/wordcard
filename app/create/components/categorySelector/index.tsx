@@ -10,19 +10,19 @@ import { Ionicons } from "@expo/vector-icons"
 import { useAuth } from "@/hooks/useAuth"
 import { observer } from "mobx-react-lite"
 import { useStores } from "@/stores/storeContext"
-import { ICategory } from "@/stores/createStore"
+import { ICategory } from "@/stores/categoryStore"
 
-function CategorySelector() {
+const CategorySelector = () => {
     const { user } = useAuth()
-    const { createStore } = useStores()
+    const { categoryStore } = useStores()
     const [dropdownVisible, setDropdownVisible] = useState(false)
 
     useEffect(() => {
-        createStore.fetchCategories(user)
+        categoryStore.fetchCategories(user)
     }, [user])
 
     const onSelectCategory = (category: ICategory) => {
-        createStore.setSelectedCategory(category)
+        categoryStore.setSelectedCategory(category)
         setDropdownVisible(false)
     }
 
@@ -31,28 +31,28 @@ function CategorySelector() {
             <TouchableOpacity
                 style={[
                     styles.dropdown,
-                    !createStore.categories.length && styles.dropdownDisabled,
+                    !categoryStore.categories.length && styles.dropdownDisabled,
                 ]}
                 onPress={() =>
-                    createStore.categories.length && setDropdownVisible(!dropdownVisible)
+                    categoryStore.categories.length && setDropdownVisible(!dropdownVisible)
                 }
-                disabled={createStore.fetchCategoriesLoading || !createStore.categories.length}
+                disabled={categoryStore.fetchCategoriesLoading || !categoryStore.categories.length}
             >
-                {createStore.fetchCategoriesLoading ? (
+                {categoryStore.fetchCategoriesLoading ? (
                     <ActivityIndicator size="small" color="#aaa" />
-                ) : createStore.categories.length ? (
+                ) : categoryStore.categories.length ? (
                     <Text style={styles.dropdownText}>
-                        {createStore.selectedCategory?.name}
+                        {categoryStore.selectedCategory?.name}
                     </Text>
                 ) : (
                     <Ionicons name="alert-circle-outline" size={20} color="#aaa" />
                 )}
             </TouchableOpacity>
 
-            {dropdownVisible && createStore.categories.length > 0 && (
+            {dropdownVisible && categoryStore.categories.length > 0 && (
                 <View style={styles.dropdownOverlay}>
                     <View style={styles.dropdownMenu}>
-                        {createStore.categories.map((cat: ICategory) => (
+                        {categoryStore.categories.map((cat: ICategory) => (
                             <TouchableOpacity
                                 key={cat.id}
                                 style={styles.menuItem}

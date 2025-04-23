@@ -13,11 +13,6 @@ import { useLocalSearchParams } from "expo-router";
 import { observer } from "mobx-react-lite"
 import { forwardRef, useImperativeHandle } from "react"
 
-// enum ERROR_TYPE {
-//     textType = 'textType',
-//     transTextType = 'transTextType'
-// } //TODO: 
-
 type wordInputsProps = {
     hasError: boolean
 }
@@ -37,6 +32,7 @@ const WordInputs = forwardRef(({ hasError }: wordInputsProps, ref) => {
         shakeWord: () => triggerShake(wordShake),
         shakeTransWord: () => triggerShake(transShake),
     }))
+
     return (
         <View style={styles.base}>
             <Animated.View style={[styles.inputWrapper, { transform: [{ translateX: wordShake }] }]}>

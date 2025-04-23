@@ -9,58 +9,67 @@ import {
     BackHandler,
     Pressable,
     ActivityIndicator,
-} from "react-native"
-import { MaterialCommunityIcons } from "@expo/vector-icons"
-import { useEffect, useState, useRef } from "react"
-import * as Haptics from "expo-haptics"
+    Animated,
+} from "react-native";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useEffect, useState, useRef } from "react";
+import { triggerShake } from "@/lib/utils";
 
 type Props = {
-    visible: boolean
-    onClose: () => void
-    onSubmit: (name: string) => void
-    loading: boolean
-}
+    visible: boolean;
+    onClose: () => void;
+    onSubmit: (name: string) => void;
+    loading: boolean;
+};
 
-export default function CreateCategoryModal({ visible, onClose, onSubmit, loading }: Props) {
-    const [name, setName] = useState("")
-    const [hasError, setHasError] = useState(false)
-    const inputRef = useRef<TextInput>(null)
+export default function CreateCategoryModal({
+    visible,
+    onClose,
+    onSubmit,
+    loading,
+}: Props) {
+    const [name, setName] = useState("");
+    const inputRef = useRef<TextInput>(null);
+    const inputShake = useRef(new Animated.Value(0)).current;
 
     useEffect(() => {
         const backAction = () => {
             if (visible && !loading) {
-                onClose()
-                return true
+                onClose();
+                return true;
             }
-            return false
-        }
+            return false;
+        };
 
-        const subscription = BackHandler.addEventListener("hardwareBackPress", backAction)
+        const subscription = BackHandler.addEventListener(
+            "hardwareBackPress",
+            backAction
+        );
         return () => {
-            subscription.remove()
-            setHasError(false)
-        }
-    }, [visible, loading])
+            subscription.remove();
+        };
+    }, [visible, loading]);
 
     useEffect(() => {
         if (visible) {
-            setName("")
-            setHasError(false)
-            setTimeout(() => inputRef.current?.focus(), 100)
+            setName("");
+            setTimeout(() => inputRef.current?.focus(), 100);
         }
-    }, [visible])
+    }, [visible]);
 
     const handleSubmit = async () => {
         if (!name.trim()) {
-            setHasError(true)
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning)
-            return
+            triggerShake(inputShake);
+            return;
         }
-        onSubmit(name)
-        setName("")
-        setHasError(false)
-        onClose()
-    }
+        onSubmit(name);
+        setName("");
+        onClose();
+    };
+
+    const onChangeInput = (text: string) => {
+        setName(text);
+    };
 
     return (
         <Modal
@@ -70,27 +79,41 @@ export default function CreateCategoryModal({ visible, onClose, onSubmit, loadin
             animationType="fade"
             statusBarTranslucent
         >
-            <Pressable onPress={!loading ? onClose : undefined} style={styles.overlay}>
+            <Pressable
+                onPress={!loading ? onClose : undefined}
+                style={styles.overlay}
+            >
                 <KeyboardAvoidingView
                     behavior={Platform.OS === "ios" ? "padding" : undefined}
                     style={styles.modalWrapper}
                 >
-                    <Pressable style={styles.modal} onPress={() => { }}>
-                        <MaterialCommunityIcons name="folder-outline" size={48} color="#666" />
-                        <TextInput
-                            ref={inputRef}
-                            value={name}
-                            onChangeText={(text) => {
-                                setName(text)
-                                if (hasError && text.trim()) setHasError(false)
-                            }}
-                            placeholder="..."
-                            style={[styles.input, hasError && styles.inputError]}
-                            placeholderTextColor="#aaa"
-                            editable={!loading}
+                    <Pressable style={styles.modal}>
+                        <MaterialCommunityIcons
+                            name="folder-outline"
+                            size={48}
+                            color="#666"
                         />
+                        <Animated.View
+                            style={[
+                                styles.input,
+                                { transform: [{ translateX: inputShake }] },
+                            ]}
+                        >
+                            <TextInput
+                                ref={inputRef}
+                                value={name}
+                                onChangeText={onChangeInput}
+                                placeholder="..."
+                                placeholderTextColor="#aaa"
+                                editable={!loading}
+                            />
+                        </Animated.View>
                         {loading ? (
-                            <ActivityIndicator size="small" color="#333" style={{ marginTop: 12 }} />
+                            <ActivityIndicator
+                                size="small"
+                                color="#333"
+                                style={{ marginTop: 12 }}
+                            />
                         ) : (
                             <View style={styles.actions}>
                                 <TouchableOpacity onPress={onClose}>
@@ -105,7 +128,7 @@ export default function CreateCategoryModal({ visible, onClose, onSubmit, loadin
                 </KeyboardAvoidingView>
             </Pressable>
         </Modal>
-    )
+    );
 }
 
 const styles = StyleSheet.create({
@@ -139,15 +162,12 @@ const styles = StyleSheet.create({
         color: "#000",
         textAlign: "left",
     },
-    inputError: {
-        borderColor: "red",
-    },
     actions: {
-        justifyContent: 'space-between',
+        justifyContent: "space-between",
         flexDirection: "row",
         paddingLeft: 24,
         paddingRight: 24,
-        width: '100%',
+        width: "100%",
         marginTop: 12,
     },
-})
+});

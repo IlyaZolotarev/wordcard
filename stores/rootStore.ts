@@ -1,5 +1,7 @@
-import { createCreateStore } from "./createStore";
+import { createStore } from "./createStore";
+import { categoryStore } from "./categoryStore";
 
 export const rootStore = {
-  createStore: createCreateStore(),
+  createStore: createStore(),
+  categoryStore: categoryStore(),
 };
