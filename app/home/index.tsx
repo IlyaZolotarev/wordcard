@@ -1,5 +1,5 @@
 import { useState } from "react"
-import CameraPreviewButton from "@/components/сameraPreviewButton"
+import CameraPreviewButton from "@/components/cameraPreviewButton"
 import { View, StyleSheet, TouchableOpacity } from "react-native"
 import CategoryList from "@/components/categoryList"
 import { MaterialCommunityIcons } from "@expo/vector-icons"

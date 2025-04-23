@@ -1,16 +1,12 @@
 import { useState, useRef } from "react";
-import {
-    View,
-    StyleSheet,
-    Image,
-    Pressable,
-} from "react-native";
-import { observer } from "mobx-react-lite"
+import { View, StyleSheet, Image, Pressable } from "react-native";
+import { observer } from "mobx-react-lite";
 import { useLocalSearchParams, router } from "expo-router";
 import { supabase } from "@/lib/supabase";
 import * as Haptics from "expo-haptics";
 import * as FileSystem from "expo-file-system";
 import CreateCategoryModal from "@/components/modals/createCategoryModal";
+import CameraModal from "@/components/cameraModal";
 import CategorySelector from "./components/categorySelector";
 import WordInputs from "./components/wordInputs";
 import SaveButton from "./components/saveButton";
@@ -19,7 +15,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { compressAndUploadImage } from "@/lib/upload";
 import { useStores } from "@/stores/storeContext";
 
-
 const CreateScreen = () => {
     const { createStore, categoryStore } = useStores();
     const { image } = useLocalSearchParams();
@@ -27,9 +22,15 @@ const CreateScreen = () => {
     const [modalVisible, setModalVisible] = useState(false);
     const [dropdownVisible, setDropdownVisible] = useState(false);
     const [savingPreloader, setSavingPreloader] = useState(false);
+    const [isModalVisible, setIsModalVisible] = useState(false);
     const imageUri = Array.isArray(image) ? image[0] : image;
-    const addCategoryButtonRef = useRef<{ addCategoryButtonShake: () => void }>(null)
-    const wordInputsRef = useRef<{ shakeWord: () => void; shakeTransWord: () => void }>(null)
+    const addCategoryButtonRef = useRef<{ addCategoryButtonShake: () => void }>(
+        null
+    );
+    const wordInputsRef = useRef<{
+        shakeWord: () => void;
+        shakeTransWord: () => void;
+    }>(null);
 
     const handleSave = async () => {
         if (!imageUri || !user) {
@@ -37,17 +38,17 @@ const CreateScreen = () => {
         }
 
         if (!createStore.word) {
-            wordInputsRef.current?.shakeWord()
+            wordInputsRef.current?.shakeWord();
             return;
         }
 
         if (!createStore.transWord) {
-            wordInputsRef.current?.shakeTransWord()
+            wordInputsRef.current?.shakeTransWord();
             return;
         }
 
         if (!categoryStore.selectedCategory) {
-            addCategoryButtonRef.current?.addCategoryButtonShake()
+            addCategoryButtonRef.current?.addCategoryButtonShake();
             return;
         }
 
@@ -95,30 +96,51 @@ const CreateScreen = () => {
         categoryStore.createCategory(name, user);
     };
 
+
+    const handlePhotoTaken = (uri: string) => {
+        router.push({
+            pathname: "/create",
+            params: { image: uri },
+        });
+    };
+
     return (
         <Pressable
             style={styles.container}
             onPress={() => dropdownVisible && setDropdownVisible(false)}
         >
             <View style={styles.wordInputsWrapper}>
-                <WordInputs hasError={false} ref={wordInputsRef} />
+                <WordInputs ref={wordInputsRef} />
             </View>
-            <Image source={{ uri: imageUri }} style={styles.image} />
+            <Pressable onPress={() => setIsModalVisible(true)}>
+                <Image source={{ uri: imageUri }} style={styles.image} />
+            </Pressable>
             <View style={styles.categoriesWrapper}>
                 <CategorySelector />
             </View>
-            <SaveButton ref={addCategoryButtonRef} setModalVisible={setModalVisible} onSave={handleSave} loading={savingPreloader} />
+            <SaveButton
+                ref={addCategoryButtonRef}
+                setModalVisible={setModalVisible}
+                onSave={handleSave}
+                loading={savingPreloader}
+            />
             <CreateCategoryModal
                 visible={modalVisible}
                 onClose={() => setModalVisible(false)}
                 onSubmit={handleCreateCategory}
                 loading={categoryStore.createCategoriesLoading}
             />
+
+            <CameraModal
+                visible={isModalVisible}
+                onTakePicture={handlePhotoTaken}
+                onClose={() => setIsModalVisible(false)}
+            />
         </Pressable>
     );
-}
+};
 
-export default observer(CreateScreen)
+export default observer(CreateScreen);
 
 const styles = StyleSheet.create({
     container: {

@@ -1,4 +1,4 @@
-import { useRef, useEffect } from "react"
+import { useRef, useEffect, forwardRef, useImperativeHandle } from "react";
 import {
     View,
     StyleSheet,
@@ -6,32 +6,32 @@ import {
     TextInput,
     TouchableOpacity,
     Animated,
-} from "react-native"
-import { triggerShake } from '@/lib/utils';
-import { useStores } from "@/stores/storeContext"
+} from "react-native";
+import { triggerShake } from "@/lib/utils";
+import { useStores } from "@/stores/storeContext";
 import { useLocalSearchParams } from "expo-router";
-import { observer } from "mobx-react-lite"
-import { forwardRef, useImperativeHandle } from "react"
+import { observer } from "mobx-react-lite";
 
-type wordInputsProps = {
-    hasError: boolean
-}
+type WordInputsHandle = {
+    shakeWord: () => void;
+    shakeTransWord: () => void;
+};
 
-const WordInputs = forwardRef(({ hasError }: wordInputsProps, ref) => {
-    const { createStore } = useStores()
+const WordInputs = forwardRef<WordInputsHandle>((_, ref) => {
+    const { createStore } = useStores();
     const { word: rawWord } = useLocalSearchParams();
     const initialWord = Array.isArray(rawWord) ? rawWord[0] : rawWord ?? "";
-    const wordShake = useRef(new Animated.Value(0)).current
-    const transShake = useRef(new Animated.Value(0)).current
+    const wordShake = useRef(new Animated.Value(0)).current;
+    const transShake = useRef(new Animated.Value(0)).current;
 
     useEffect(() => {
-        createStore.setWord(initialWord)
-    }, [])
+        createStore.setWord(initialWord);
+    }, []);
 
     useImperativeHandle(ref, () => ({
         shakeWord: () => triggerShake(wordShake),
         shakeTransWord: () => triggerShake(transShake),
-    }))
+    }));
 
     return (
         <View style={styles.base}>
@@ -40,7 +40,7 @@ const WordInputs = forwardRef(({ hasError }: wordInputsProps, ref) => {
                     placeholder="..."
                     value={createStore.word}
                     onChangeText={(text) => createStore.setWord(text)}
-                    style={[styles.input, hasError && styles.inputError]}
+                    style={styles.input}
                 />
             </Animated.View>
 
@@ -57,10 +57,11 @@ const WordInputs = forwardRef(({ hasError }: wordInputsProps, ref) => {
                 />
             </Animated.View>
         </View>
-    )
-})
+    );
+});
 
-export default observer(WordInputs)
+export default observer(WordInputs);
+
 
 const styles = StyleSheet.create({
     base: {
@@ -78,9 +79,6 @@ const styles = StyleSheet.create({
         fontSize: 24,
         marginBottom: 16,
         textAlign: 'center'
-    },
-    inputError: {
-        borderColor: "red",
     },
     swapBtn: {
         paddingHorizontal: 8,
