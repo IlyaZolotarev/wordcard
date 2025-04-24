@@ -69,7 +69,8 @@ export class CategoryStore {
         }
     }
 
-    updateCategory = async (user: User, categoryId: string, categoryName: string, callback?: () => void) => {
+    updateCategory = async (user: User | null, categoryId: string, categoryName: string, callback?: () => void) => {
+        if (!user) return
         runInAction(() => {
             this.updateCategoryLoading = true
         })
@@ -91,7 +92,9 @@ export class CategoryStore {
         }
     }
 
-    deleteCategory = async (user: User, categoryId: string, callback?: () => void) => {
+    deleteCategory = async (user: User | null, categoryId: string, callback?: () => void) => {
+        if (!user) return
+
         runInAction(() => {
             this.deleteCategoryLoading = true
         })

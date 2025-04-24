@@ -41,6 +41,11 @@ const SearchScreen = () => {
         )
     }
 
+    const onSelectImage = (imageUrl: string) => {
+        searchStore.setImageUrl(imageUrl)
+        router.push("/create");
+    }
+
     return (
         <FlatList
             data={searchStore.images}
@@ -55,10 +60,7 @@ const SearchScreen = () => {
             }
             renderItem={({ item }) => (
                 <TouchableOpacity
-                    onPress={() => router.push({
-                        pathname: "/create",
-                        params: { image: item, word: searchStore.searchText }
-                    })}
+                    onPress={() => onSelectImage(item)}
                     style={styles.card}
                 >
                     <Image source={{ uri: item }} style={styles.image} />

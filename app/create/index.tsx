@@ -1,9 +1,7 @@
 import { useState, useRef } from "react";
 import { View, StyleSheet, Image, Pressable } from "react-native";
 import { observer } from "mobx-react-lite";
-import { useLocalSearchParams, router } from "expo-router";
-import { supabase } from "@/lib/supabase";
-import * as Haptics from "expo-haptics";
+import { router } from "expo-router";
 import * as FileSystem from "expo-file-system";
 import CreateCategoryModal from "@/components/modals/createCategoryModal";
 import CameraModal from "@/components/cameraModal";
@@ -12,18 +10,16 @@ import WordInputs from "./components/wordInputs";
 import SaveButton from "./components/saveButton";
 
 import { useAuth } from "@/hooks/useAuth";
-import { compressAndUploadImage } from "@/lib/upload";
+import { compressImage } from "@/lib/upload";
 import { useStores } from "@/stores/storeContext";
 
 const CreateScreen = () => {
-    const { createStore, categoryStore } = useStores();
-    const { image } = useLocalSearchParams();
+    const { createStore, categoryStore, searchStore } = useStores();
     const { user } = useAuth();
     const [modalVisible, setModalVisible] = useState(false);
     const [dropdownVisible, setDropdownVisible] = useState(false);
     const [savingPreloader, setSavingPreloader] = useState(false);
     const [isModalVisible, setIsModalVisible] = useState(false);
-    const imageUri = Array.isArray(image) ? image[0] : image;
     const addCategoryButtonRef = useRef<{ addCategoryButtonShake: () => void }>(
         null
     );
@@ -33,9 +29,7 @@ const CreateScreen = () => {
     }>(null);
 
     const handleSave = async () => {
-        if (!imageUri || !user) {
-            return;
-        }
+        if (!user) return;
 
         if (!createStore.word) {
             wordInputsRef.current?.shakeWord();
@@ -54,48 +48,31 @@ const CreateScreen = () => {
 
         setSavingPreloader(true);
 
-        let finalImageUrl = imageUri;
-
-        if (imageUri.startsWith("file://")) {
-            try {
-                const uploadedUrl = await compressAndUploadImage(imageUri, user.id);
-                if (uploadedUrl) {
-                    finalImageUrl = uploadedUrl;
-                    await FileSystem.deleteAsync(imageUri, { idempotent: true });
-                } else {
-                    throw new Error("Не удалось загрузить изображение.");
-                }
-            } catch (err) {
-                console.error("Ошибка при загрузке изображения:", err);
-                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-                setSavingPreloader(false);
-                return;
+        if (searchStore.selectedImageUrl.startsWith("file://")) { //TODO: Add new store for handmade photo
+            const compressedImage = await compressImage(
+                searchStore.selectedImageUrl,
+                user.id
+            );
+            if (compressedImage?.fileName && compressedImage.fileName) {
+                await createStore.saveCardWithImageStore(
+                    user,
+                    compressedImage.fileName,
+                    compressedImage.arrayBuffer,
+                    categoryStore.selectedCategory.id
+                );
+                await FileSystem.deleteAsync(searchStore.selectedImageUrl, {
+                    idempotent: true,
+                });
             }
+        } else {
+            await createStore.saveCard(user, searchStore.selectedImageUrl, categoryStore.selectedCategory.id)
         }
-
-        const { error } = await supabase.from("cards").insert({
-            word: createStore.word,
-            trans_word: createStore.transWord,
-            image_url: finalImageUrl,
-            category_id: categoryStore.selectedCategory.id,
-            user_id: user.id,
-        });
-
-        setSavingPreloader(false);
-
-        if (error) {
-            console.error("Ошибка при сохранении карточки:", error);
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-            return;
-        }
-
         router.replace("/home");
     };
 
     const handleCreateCategory = (name: string) => {
         categoryStore.createCategory(name, user);
     };
-
 
     const handlePhotoTaken = (uri: string) => {
         router.push({
@@ -113,7 +90,10 @@ const CreateScreen = () => {
                 <WordInputs ref={wordInputsRef} />
             </View>
             <Pressable onPress={() => setIsModalVisible(true)}>
-                <Image source={{ uri: imageUri }} style={styles.image} />
+                <Image
+                    source={{ uri: searchStore.selectedImageUrl }}
+                    style={styles.image}
+                />
             </Pressable>
             <View style={styles.categoriesWrapper}>
                 <CategorySelector />

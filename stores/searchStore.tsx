@@ -11,9 +11,16 @@ export class SearchStore {
     hasMore = true
     page = 0
     searchText = ""
+    selectedImageUrl = ""
 
     constructor() {
         makeAutoObservable(this)
+    }
+
+    setImageUrl = (imageUrl: string) => {
+        runInAction(() => {
+            this.selectedImageUrl = imageUrl
+        })
     }
 
     setSearchText = (value: string) => {
@@ -30,7 +37,7 @@ export class SearchStore {
         })
     }
 
-    fetchImages = async (user: User, searchText: string) => {
+    fetchImages = async (user: User | null, searchText: string) => {
         if (!user || !searchText || this.loading || !this.hasMore) return
 
         runInAction(() => {
