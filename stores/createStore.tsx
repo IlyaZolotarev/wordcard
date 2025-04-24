@@ -1,4 +1,4 @@
-import { makeAutoObservable } from "mobx"
+import { makeAutoObservable, runInAction } from "mobx"
 
 export class CreateStore {
     word = ""
@@ -8,19 +8,31 @@ export class CreateStore {
         makeAutoObservable(this)
     }
 
+    reset = () => {
+        runInAction(() => {
+            this.word = ""
+            this.transWord = ""
+        })
+    }
+
     setWord = (value: string) => {
-        console.log(value)
-        this.word = value
+        runInAction(() => {
+            this.word = value
+        })
     }
 
     setTransWord = (value: string) => {
-        this.transWord = value
+        runInAction(() => {
+            this.transWord = value
+        })
     }
 
     swapWords = () => {
         const temp = this.word
-        this.word = this.transWord
-        this.transWord = temp
+        runInAction(() => {
+            this.word = this.transWord
+            this.transWord = temp
+        })
     }
 }
 

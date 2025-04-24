@@ -1,5 +1,5 @@
-import { useLocalSearchParams, useRouter } from "expo-router"
-import { useEffect, useState } from "react"
+import { useRouter } from "expo-router"
+import { useEffect } from "react"
 import {
     StyleSheet,
     ActivityIndicator,
@@ -10,55 +10,30 @@ import {
     TouchableOpacity,
 } from "react-native"
 import { MaterialCommunityIcons } from "@expo/vector-icons"
+import { observer } from "mobx-react-lite"
+import { useStores } from "@/stores/storeContext"
+import { useAuth } from "@/hooks/useAuth"
 
-const API_KEY = "jo6QkOv9KAgbbrMpbtZtmMkBxPRlM2PbjOVJKoJYXXwJNp2KmLo3G8bt"
-const PEXELS_URL = "https://api.pexels.com/v1/search"
-const PER_PAGE = 20
-
-export default function SearchScreen() {
-    const { q } = useLocalSearchParams()
+const SearchScreen = () => {
+    const { searchStore } = useStores()
     const router = useRouter()
-    const [images, setImages] = useState<string[]>([])
-    const [page, setPage] = useState(1)
-    const [loading, setLoading] = useState(false)
-    const [hasMore, setHasMore] = useState(true)
-
-    const fetchImages = async (pageToLoad: number) => {
-        if (!q || loading || !hasMore) return
-        setLoading(true)
-
-        try {
-            const res = await fetch(`${PEXELS_URL}?query=${q}&per_page=${PER_PAGE}&page=${pageToLoad}`, {
-                headers: { Authorization: API_KEY },
-            })
-            const data = await res.json()
-            const urls = data.photos.map((p: any) => p.src.medium)
-
-            setImages(prev => [...prev, ...urls])
-            if (urls.length < PER_PAGE) setHasMore(false)
-        } catch (error) {
-            console.error("Ошибка при загрузке изображений:", error)
-        }
-
-        setLoading(false)
-    }
+    const { user } = useAuth()
 
     useEffect(() => {
-        setImages([])
-        setPage(1)
-        setHasMore(true)
-        fetchImages(1)
-    }, [q])
+        searchStore.fetchImages(user, searchStore.searchText)
+    }, [user])
+
+    useEffect(() => {
+        return () => {
+            searchStore.reset()
+        }
+    }, [])
 
     const loadMore = () => {
-        if (!loading && hasMore) {
-            const nextPage = page + 1
-            setPage(nextPage)
-            fetchImages(nextPage)
-        }
+        searchStore.fetchImages(user, searchStore.searchText)
     }
 
-    if (!loading && images.length === 0) {
+    if (!searchStore.loading && searchStore.images.length === 0) {
         return (
             <View style={styles.emptyWrapper}>
                 <MaterialCommunityIcons name="magnify-close" size={64} color="#ccc" />
@@ -68,7 +43,7 @@ export default function SearchScreen() {
 
     return (
         <FlatList
-            data={images}
+            data={searchStore.images}
             keyExtractor={(item, index) => `${item}-${index}`}
             numColumns={2}
             contentContainerStyle={styles.container}
@@ -76,24 +51,26 @@ export default function SearchScreen() {
             onEndReached={loadMore}
             onEndReachedThreshold={0.4}
             ListFooterComponent={
-                loading ? <ActivityIndicator style={{ marginVertical: 20 }} /> : null
+                searchStore.loading ? <ActivityIndicator style={{ marginVertical: 20 }} /> : null
             }
             renderItem={({ item }) => (
                 <TouchableOpacity
                     onPress={() => router.push({
                         pathname: "/create",
-                        params: { image: item, word: String(q) }
+                        params: { image: item, word: searchStore.searchText }
                     })}
                     style={styles.card}
                 >
                     <Image source={{ uri: item }} style={styles.image} />
-                    <Text style={styles.caption}>{q}</Text>
+                    <Text style={styles.caption}>{searchStore.searchText}</Text>
                 </TouchableOpacity>
             )}
             showsVerticalScrollIndicator={false}
         />
     )
 }
+
+export default observer(SearchScreen)
 
 const styles = StyleSheet.create({
     container: {

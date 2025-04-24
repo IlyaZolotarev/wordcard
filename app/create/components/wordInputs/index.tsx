@@ -9,7 +9,6 @@ import {
 } from "react-native";
 import { triggerShake } from "@/lib/utils";
 import { useStores } from "@/stores/storeContext";
-import { useLocalSearchParams } from "expo-router";
 import { observer } from "mobx-react-lite";
 
 type WordInputsHandle = {
@@ -18,24 +17,26 @@ type WordInputsHandle = {
 };
 
 const WordInputs = forwardRef<WordInputsHandle>((_, ref) => {
-    const { createStore } = useStores();
-    const { word: rawWord } = useLocalSearchParams();
-    const initialWord = Array.isArray(rawWord) ? rawWord[0] : rawWord ?? "";
-    const wordShake = useRef(new Animated.Value(0)).current;
-    const transShake = useRef(new Animated.Value(0)).current;
+    const { createStore, searchStore } = useStores();
+    const wordInputShake = useRef(new Animated.Value(0)).current;
+    const transWordInputShake = useRef(new Animated.Value(0)).current;
 
     useEffect(() => {
-        createStore.setWord(initialWord);
+        createStore.setWord(searchStore.searchText);
+
+        return () => {
+            createStore.reset()
+        }
     }, []);
 
     useImperativeHandle(ref, () => ({
-        shakeWord: () => triggerShake(wordShake),
-        shakeTransWord: () => triggerShake(transShake),
+        shakeWord: () => triggerShake(wordInputShake),
+        shakeTransWord: () => triggerShake(transWordInputShake),
     }));
 
     return (
         <View style={styles.base}>
-            <Animated.View style={[styles.inputWrapper, { transform: [{ translateX: wordShake }] }]}>
+            <Animated.View style={[styles.inputWrapper, { transform: [{ translateX: wordInputShake }] }]}>
                 <TextInput
                     placeholder="..."
                     value={createStore.word}
@@ -48,7 +49,7 @@ const WordInputs = forwardRef<WordInputsHandle>((_, ref) => {
                 <Text style={styles.swapText}>⇄</Text>
             </TouchableOpacity>
 
-            <Animated.View style={[styles.inputWrapper, { transform: [{ translateX: transShake }] }]}>
+            <Animated.View style={[styles.inputWrapper, { transform: [{ translateX: transWordInputShake }] }]}>
                 <TextInput
                     placeholder="..."
                     value={createStore.transWord}

@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import CameraPreviewButton from "@/components/cameraPreviewButton"
 import { View, StyleSheet, TouchableOpacity } from "react-native"
 import CategoryList from "@/components/categoryList"
@@ -10,7 +10,7 @@ import { useStores } from "@/stores/storeContext"
 import { observer } from "mobx-react-lite"
 
 const HomeScreen = () => {
-    const { categoryStore } = useStores()
+    const { categoryStore, searchStore } = useStores()
     const [showModal, setShowModal] = useState(false)
     const { user } = useAuth()
 
@@ -26,6 +26,13 @@ const HomeScreen = () => {
             params: { image: uri },
         })
     }
+
+    useEffect(() => {
+        if (searchStore.searchText) {
+            searchStore.searchText = ""
+            searchStore.reset()
+        }
+    })
 
     return (
         <View style={styles.content}>

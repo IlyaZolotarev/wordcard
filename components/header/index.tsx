@@ -6,39 +6,33 @@ import {
     TextInput,
     Keyboard,
     TouchableWithoutFeedback,
+    Animated
 } from "react-native"
-import { useEffect, useState } from "react"
-import { useAuth } from "@/hooks/useAuth"
-import * as Haptics from "expo-haptics"
+import { observer } from "mobx-react-lite"
+import { useStores } from "@/stores/storeContext"
+import { useRef } from 'react'
+import { triggerShake } from "@/lib/utils";
 
-export default function Header() {
+const Header = () => {
+    const { searchStore } = useStores()
     const router = useRouter()
     const pathname = usePathname()
-    const { user } = useAuth()
-    const [query, setQuery] = useState("")
-    const [hasError, setHasError] = useState(false)
-    const showBack = user && pathname !== "/home" && pathname !== "/"
+    const goBack = pathname !== "/home" && pathname !== "/"
+    const headerInputShake = useRef(new Animated.Value(0)).current;
 
     const handleSubmit = () => {
-        if (!query.trim()) {
-            setHasError(true)
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning)
+        if (!searchStore.searchText.trim()) {
+            triggerShake(headerInputShake)
             return
         }
-        router.push({ pathname: "/search", params: { q: query } })
+        router.push({ pathname: "/search" })
     }
-
-    useEffect(() => {
-        const hideError = () => setHasError(false)
-        const sub = Keyboard.addListener("keyboardDidHide", hideError)
-        return () => sub.remove()
-    }, [])
 
     return (
         <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
             <View>
                 <View style={styles.inner}>
-                    {showBack && (
+                    {goBack && (
                         <IconButton
                             icon="arrow-left"
                             size={24}
@@ -52,14 +46,16 @@ export default function Header() {
                         />
                     )}
                     <View style={styles.searchContainer}>
-                        <TextInput
-                            value={query}
-                            onChangeText={setQuery}
-                            placeholder="A...?"
-                            placeholderTextColor="#aaa"
-                            style={[styles.input, hasError && styles.inputError]}
-                            onSubmitEditing={handleSubmit}
-                        />
+                        <Animated.View style={[styles.input, { transform: [{ translateX: headerInputShake }] }]}>
+                            <TextInput
+                                value={searchStore.searchText}
+                                onChangeText={(text) => searchStore.setSearchText(text)}
+                                placeholder="A...?"
+                                placeholderTextColor="#aaa"
+                                onSubmitEditing={handleSubmit}
+                            />
+                        </Animated.View>
+
                         <IconButton
                             icon="magnify"
                             size={22}
@@ -72,6 +68,8 @@ export default function Header() {
         </TouchableWithoutFeedback>
     )
 }
+
+export default observer(Header)
 
 const styles = StyleSheet.create({
     inner: {
@@ -89,9 +87,6 @@ const styles = StyleSheet.create({
         flex: 1,
         height: 44,
         color: 'black'
-    },
-    inputError: {
-        borderColor: "red",
     },
     searchIcon: {
         marginLeft: 4,
