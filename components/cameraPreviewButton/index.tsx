@@ -1,30 +1,14 @@
-import React, { useState, useEffect } from "react";
-import { View, TouchableOpacity, StyleSheet, BackHandler } from "react-native";
+import React from "react";
+import { View, TouchableOpacity, StyleSheet } from "react-native";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { ActivityIndicator } from "react-native-paper";
 import { BlurView } from "expo-blur";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import CameraModal from "@/components/cameraModal";
+import { useRouter } from "expo-router";
 
-type Props = {
-    onPhoto: (uri: string) => void;
-};
-
-export default function CameraPreviewButton({ onPhoto }: Props) {
+export default function CameraPreviewButton() {
     const [permission, requestPermission] = useCameraPermissions();
-    const [isModalVisible, setIsModalVisible] = useState(false);
-
-    useEffect(() => {
-        const backHandler = BackHandler.addEventListener("hardwareBackPress", () => {
-            if (isModalVisible) {
-                setIsModalVisible(false);
-                return true;
-            }
-            return false;
-        });
-
-        return () => backHandler.remove();
-    }, [isModalVisible]);
+    const router = useRouter();
 
     if (!permission) return <ActivityIndicator />;
     if (!permission.granted) {
@@ -36,22 +20,14 @@ export default function CameraPreviewButton({ onPhoto }: Props) {
     }
 
     return (
-        <>
-            <TouchableOpacity onPress={() => setIsModalVisible(true)} style={styles.previewContainer}>
-                <CameraView style={StyleSheet.absoluteFill} facing="back" />
-                <BlurView intensity={60} tint="dark" style={StyleSheet.absoluteFill}>
-                    <View style={styles.iconWrapper}>
-                        <MaterialCommunityIcons name="camera-outline" size={36} color="#fff" />
-                    </View>
-                </BlurView>
-            </TouchableOpacity>
-
-            <CameraModal
-                visible={isModalVisible}
-                onTakePicture={onPhoto}
-                onClose={() => setIsModalVisible(false)}
-            />
-        </>
+        <TouchableOpacity onPress={() => router.push("/camera")} style={styles.previewContainer}>
+            <CameraView style={StyleSheet.absoluteFill} facing="back" />
+            <BlurView intensity={60} tint="dark" style={StyleSheet.absoluteFill}>
+                <View style={styles.iconWrapper}>
+                    <MaterialCommunityIcons name="camera-outline" size={36} color="#fff" />
+                </View>
+            </BlurView>
+        </TouchableOpacity>
     );
 }
 

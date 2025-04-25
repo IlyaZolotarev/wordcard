@@ -5,7 +5,6 @@ import CategoryList from "@/components/categoryList"
 import { MaterialCommunityIcons } from "@expo/vector-icons"
 import CreateCategoryModal from "@/components/modals/createCategoryModal"
 import { useAuth } from "@/hooks/useAuth"
-import { router } from "expo-router"
 import { useStores } from "@/stores/storeContext"
 import { observer } from "mobx-react-lite"
 
@@ -18,15 +17,6 @@ const HomeScreen = () => {
         categoryStore.createCategory(name, user);
     };
 
-    const handlePhotoTaken = (uri: string) => {
-        if (!user) return
-
-        router.push({
-            pathname: "/create",
-            params: { image: uri },
-        })
-    }
-
     useEffect(() => {
         if (searchStore.searchText) {
             searchStore.searchText = ""
@@ -37,7 +27,7 @@ const HomeScreen = () => {
     return (
         <View style={styles.content}>
             <View style={styles.previewCameraWrapper}>
-                <CameraPreviewButton onPhoto={handlePhotoTaken} />
+                <CameraPreviewButton />
             </View>
             <CategoryList />
             <TouchableOpacity

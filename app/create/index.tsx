@@ -48,7 +48,7 @@ const CreateScreen = () => {
 
         setSavingPreloader(true);
 
-        if (searchStore.selectedImageUrl.startsWith("file://")) { //TODO: Add new store for handmade photo
+        if (searchStore.selectedImageUrl.startsWith("file://")) {
             const compressedImage = await compressImage(
                 searchStore.selectedImageUrl,
                 user.id
@@ -74,11 +74,9 @@ const CreateScreen = () => {
         categoryStore.createCategory(name, user);
     };
 
-    const handlePhotoTaken = (uri: string) => {
-        router.push({
-            pathname: "/create",
-            params: { image: uri },
-        });
+    const onTakePicture = (imageUrl: string) => {
+        searchStore.setImageUrl(imageUrl);
+        setModalVisible(false)
     };
 
     return (
@@ -113,7 +111,7 @@ const CreateScreen = () => {
 
             <CameraModal
                 visible={isModalVisible}
-                onTakePicture={handlePhotoTaken}
+                onTakePicture={onTakePicture}
                 onClose={() => setIsModalVisible(false)}
             />
         </Pressable>

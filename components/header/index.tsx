@@ -25,44 +25,42 @@ const Header = () => {
             triggerShake(headerInputShake)
             return
         }
-        router.push({ pathname: "/search" })
+        router.push("/search")
     }
 
     return (
         <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-            <View>
-                <View style={styles.inner}>
-                    {goBack && (
-                        <IconButton
-                            icon="arrow-left"
-                            size={24}
-                            onPress={() => {
-                                if (pathname.includes("search")) {
-                                    router.replace("/home")
-                                } else {
-                                    router.back()
-                                }
-                            }}
+            <View style={styles.inner}>
+                {goBack && (
+                    <IconButton
+                        icon="arrow-left"
+                        size={24}
+                        onPress={() => {
+                            if (pathname.includes("search")) {
+                                router.replace("/home")
+                            } else {
+                                router.back()
+                            }
+                        }}
+                    />
+                )}
+                <View style={styles.searchContainer}>
+                    <Animated.View style={[styles.input, { transform: [{ translateX: headerInputShake }] }]}>
+                        <TextInput
+                            value={searchStore.searchText}
+                            onChangeText={(text) => searchStore.setSearchText(text)}
+                            placeholder="A...?"
+                            placeholderTextColor="#aaa"
+                            onSubmitEditing={handleSubmit}
                         />
-                    )}
-                    <View style={styles.searchContainer}>
-                        <Animated.View style={[styles.input, { transform: [{ translateX: headerInputShake }] }]}>
-                            <TextInput
-                                value={searchStore.searchText}
-                                onChangeText={(text) => searchStore.setSearchText(text)}
-                                placeholder="A...?"
-                                placeholderTextColor="#aaa"
-                                onSubmitEditing={handleSubmit}
-                            />
-                        </Animated.View>
+                    </Animated.View>
 
-                        <IconButton
-                            icon="magnify"
-                            size={22}
-                            onPress={handleSubmit}
-                            style={styles.searchIcon}
-                        />
-                    </View>
+                    <IconButton
+                        icon="magnify"
+                        size={22}
+                        onPress={handleSubmit}
+                        style={styles.searchIcon}
+                    />
                 </View>
             </View>
         </TouchableWithoutFeedback>
@@ -75,17 +73,19 @@ const styles = StyleSheet.create({
     inner: {
         flexDirection: "row",
         alignItems: "center",
+        height: 44,
     },
     searchContainer: {
         flex: 1,
         flexDirection: "row",
         alignItems: "center",
+
     },
     input: {
         borderBottomWidth: 1,
         borderColor: "#ddd",
         flex: 1,
-        height: 44,
+
         color: 'black'
     },
     searchIcon: {
