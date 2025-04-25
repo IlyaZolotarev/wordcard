@@ -7,16 +7,68 @@ export interface ICategory {
     name: string
 }
 
+export interface ICard {
+    id: string,
+    word: string
+    trans_word: string
+    image_url: string
+}
+const CARDS_PER_PAGE = 15
 export class CategoryStore {
+    cards: ICard[] = []
     categories: ICategory[] = []
     selectedCategory: ICategory | null = null
     fetchCategoriesLoading = false
     createCategoriesLoading = false
     updateCategoryLoading = false
     deleteCategoryLoading = false
+    fetchImageByLoading = false
+    hasMore = true
+    page = 0
 
     constructor() {
         makeAutoObservable(this)
+    }
+
+    resetCards = () => {
+        runInAction(() => {
+            this.cards = []
+            this.hasMore = true
+            this.page = 0
+        })
+    }
+
+    fetchCardsById = async (user: User | null, categoryId: string) => {
+        if (!user || this.fetchImageByLoading || !this.hasMore) return;
+
+        runInAction(() => {
+            this.fetchImageByLoading = true;
+        })
+
+        const from = this.page * CARDS_PER_PAGE;
+        const to = from + CARDS_PER_PAGE;
+
+        const { data, error } = await supabase
+            .from("cards")
+            .select("id, word, trans_word, image_url")
+            .eq("category_id", categoryId)
+            .range(from, to);
+
+        runInAction(() => {
+            this.fetchImageByLoading = false;
+        })
+
+        if (!error && data) {
+            if (data.length < CARDS_PER_PAGE) {
+                runInAction(() => {
+                    this.hasMore = false;
+                })
+            }
+            runInAction(() => {
+                this.cards = [...this.cards, ...data];
+                this.page = this.page + 1;
+            })
+        }
     }
 
     fetchCategories = async (user: User | null) => {

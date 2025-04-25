@@ -108,7 +108,6 @@ const CreateScreen = () => {
                 onSubmit={handleCreateCategory}
                 loading={categoryStore.createCategoriesLoading}
             />
-
             <CameraModal
                 visible={isModalVisible}
                 onTakePicture={onTakePicture}
