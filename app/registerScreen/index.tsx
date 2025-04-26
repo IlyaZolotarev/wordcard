@@ -31,14 +31,14 @@ export default function Register() {
         if (error) {
             setError(error.message)
         } else {
-            router.replace("/home")
+            router.replace("/homeScreen")
         }
 
         setLoading(false)
     }
 
     const { user } = useAuth()
-    if (user) return <Redirect href="/home" />
+    if (user) return <Redirect href="/homeScreen" />
 
     return (
         <>
@@ -78,7 +78,7 @@ export default function Register() {
                 Зарегистрироваться
             </Button>
 
-            <TouchableOpacity onPress={() => router.push("/login")}>
+            <TouchableOpacity onPress={() => router.push("/loginScreen")}>
                 <Text style={{ textAlign: "center", color: "#4E9EFF" }}>
                     Авторизация
                 </Text>

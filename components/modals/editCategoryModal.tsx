@@ -99,7 +99,7 @@ const EditCategoryModal = ({ visible, onClose, categoryId }: Props) => {
                     behavior={Platform.OS === "ios" ? "padding" : undefined}
                     style={styles.modalWrapper}
                 >
-                    <Pressable style={styles.modal} onPress={() => { }}>
+                    <View style={styles.modal}>
                         <MaterialCommunityIcons
                             name="folder-outline"
                             size={48}
@@ -160,7 +160,7 @@ const EditCategoryModal = ({ visible, onClose, categoryId }: Props) => {
                                 </TouchableOpacity>
                             )}
                         </View>
-                    </Pressable>
+                    </View>
                 </KeyboardAvoidingView>
             </Pressable>
         </Modal>

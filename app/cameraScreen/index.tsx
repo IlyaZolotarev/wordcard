@@ -47,7 +47,7 @@ const CameraScreen = () => {
                     to: newPath,
                 });
                 searchStore.setImageUrl(newPath);
-                router.replace("/create");
+                router.replace("/createScreen");
             } catch (err) {
                 console.warn("Ошибка при съёмке:", err);
             }

@@ -1,6 +1,6 @@
-import { makeAutoObservable, runInAction } from "mobx"
-import { supabase } from "@/lib/supabase"
-import { User } from "@supabase/supabase-js"
+import { makeAutoObservable, runInAction } from "mobx";
+import { supabase } from "@/lib/supabase";
+import { User } from "@supabase/supabase-js";
 
 export interface ICategory {
     id: string,
@@ -13,40 +13,51 @@ export interface ICard {
     trans_word: string
     image_url: string
 }
-const CARDS_PER_PAGE = 15
+
+const CARDS_PER_PAGE = 10;
+
 export class CategoryStore {
-    cards: ICard[] = []
-    categories: ICategory[] = []
-    selectedCategory: ICategory | null = null
-    fetchCategoriesLoading = false
-    createCategoriesLoading = false
-    updateCategoryLoading = false
-    deleteCategoryLoading = false
-    fetchImageByLoading = false
-    hasMore = true
-    page = 0
+    cards: ICard[] = [];
+    categories: ICategory[] = [];
+    selectedCategory: ICategory | null = null;
+    fetchCategoriesLoading = false;
+    createCategoriesLoading = false;
+    updateCategoryLoading = false;
+    deleteCategoryLoading = false;
+    fetchCardsLoading = false;
+    hasMore = true;
+    page = 0;
+    searchText = ""
+    isSearchMode = false
 
     constructor() {
-        makeAutoObservable(this)
+        makeAutoObservable(this);
     }
 
     resetCards = () => {
         runInAction(() => {
-            this.cards = []
-            this.hasMore = true
-            this.page = 0
-        })
+            this.cards = [];
+            this.hasMore = true;
+            this.page = 0;
+        });
+    }
+
+    setSearchText = (text: string) => {
+        runInAction(() => {
+            this.searchText = text;
+        });
     }
 
     fetchCardsById = async (user: User | null, categoryId: string) => {
-        if (!user || this.fetchImageByLoading || !this.hasMore) return;
+        if (!user || this.fetchCardsLoading || !this.hasMore) return;
 
         runInAction(() => {
-            this.fetchImageByLoading = true;
-        })
+            this.fetchCardsLoading = true;
+            this.isSearchMode = false;
+        });
 
         const from = this.page * CARDS_PER_PAGE;
-        const to = from + CARDS_PER_PAGE;
+        const to = from + CARDS_PER_PAGE - 1;
 
         const { data, error } = await supabase
             .from("cards")
@@ -55,119 +66,209 @@ export class CategoryStore {
             .range(from, to);
 
         runInAction(() => {
-            this.fetchImageByLoading = false;
-        })
+            this.fetchCardsLoading = false;
+        });
 
         if (!error && data) {
             if (data.length < CARDS_PER_PAGE) {
                 runInAction(() => {
                     this.hasMore = false;
-                })
+                });
             }
             runInAction(() => {
                 this.cards = [...this.cards, ...data];
-                this.page = this.page + 1;
-            })
+                this.page += 1;
+            });
+        }
+    }
+
+    searchCardsByWord = async (user: User | null, categoryId: string) => {
+        if (!user || !this.searchText.trim() || this.fetchCardsLoading || !this.hasMore) return;
+
+        runInAction(() => {
+            this.fetchCardsLoading = true;
+            this.isSearchMode = true;
+        });
+
+        const from = this.page * CARDS_PER_PAGE;
+        const to = from + CARDS_PER_PAGE - 1;
+
+        const { data, error } = await supabase
+            .from("cards")
+            .select("id, word, trans_word, image_url")
+            .eq("category_id", categoryId)
+            .or(`word.ilike.%${this.searchText}%,trans_word.ilike.%${this.searchText}%`)
+            .range(from, to);
+
+        runInAction(() => {
+            this.fetchCardsLoading = false;
+        });
+
+        if (!error && data) {
+            if (data.length < CARDS_PER_PAGE) {
+                runInAction(() => {
+                    this.hasMore = false;
+                });
+            }
+            runInAction(() => {
+                if (this.page === 0) {
+                    this.cards = data;
+                } else {
+                    this.cards = [...this.cards, ...data];
+                }
+                this.page += 1;
+            });
         }
     }
 
     fetchCategories = async (user: User | null) => {
-        if (!user) return
+        if (!user) return;
 
         runInAction(() => {
-            this.fetchCategoriesLoading = true
-        })
+            this.fetchCategoriesLoading = true;
+        });
 
         const { data, error } = await supabase
             .from("categories")
             .select("id, name")
-            .eq("user_id", user.id)
+            .eq("user_id", user.id);
 
         runInAction(() => {
             if (!error && data) {
-                this.categories = data
-                this.selectedCategory = data[0] || null
+                this.categories = data;
+                this.selectedCategory = data[0] || null;
             }
-            this.fetchCategoriesLoading = false
-        })
+            this.fetchCategoriesLoading = false;
+        });
     }
 
     setSelectedCategory = (cat: ICategory) => {
-        this.selectedCategory = cat
+        this.selectedCategory = cat;
     }
 
     createCategory = async (name: string, user: User | null) => {
-        if (!user) return
+        if (!user) return;
 
         runInAction(() => {
-            this.createCategoriesLoading = true
-        })
+            this.createCategoriesLoading = true;
+        });
 
         const { data, error } = await supabase
             .from("categories")
             .insert({ name, user_id: user.id })
             .select("id, name")
-            .single()
+            .single();
 
         runInAction(() => {
-            this.createCategoriesLoading = false
-        })
+            this.createCategoriesLoading = false;
+        });
 
         if (!error && data) {
-            await this.fetchCategories(user)
+            await this.fetchCategories(user);
             runInAction(() => {
-                this.selectedCategory = data
-            })
+                this.selectedCategory = data;
+            });
         }
     }
 
     updateCategory = async (user: User | null, categoryId: string, categoryName: string, callback?: () => void) => {
-        if (!user) return
+        if (!user) return;
+
         runInAction(() => {
-            this.updateCategoryLoading = true
-        })
+            this.updateCategoryLoading = true;
+        });
 
         const { error } = await supabase
             .from("categories")
             .update({ name: categoryName })
-            .eq("id", categoryId)
+            .eq("id", categoryId);
 
         runInAction(() => {
-            this.updateCategoryLoading = false
-        })
+            this.updateCategoryLoading = false;
+        });
 
         if (!error) {
             if (typeof callback === 'function') {
-                callback()
+                callback();
             }
-            await this.fetchCategories(user)
+            await this.fetchCategories(user);
         }
     }
 
     deleteCategory = async (user: User | null, categoryId: string, callback?: () => void) => {
-        if (!user) return
+        if (!user) return;
 
         runInAction(() => {
-            this.deleteCategoryLoading = true
-        })
-        await supabase.from("cards").delete().eq("category_id", categoryId);
+            this.deleteCategoryLoading = true;
+        });
 
-        const { error } = await supabase
-            .from("categories")
-            .delete()
-            .eq("id", categoryId);
+        try {
+            const { data: cards, error: fetchError } = await supabase
+                .from("cards")
+                .select("image_url")
+                .eq("category_id", categoryId);
 
-        runInAction(() => {
-            this.deleteCategoryLoading = false
-        })
-
-        if (!error) {
-            if (typeof callback === 'function') {
-                callback()
+            if (fetchError) {
+                console.error("Ошибка при получении карточек:", fetchError);
+                return;
             }
-            await this.fetchCategories(user)
+
+            const filesToDelete = (cards || [])
+                .map((card: any) => {
+                    if (!card.image_url) return null;
+                    const parts = card.image_url.split("/storage/v1/object/sign/cards/");
+                    if (!parts[1]) return null;
+
+                    const [pathWithoutToken] = parts[1].split("?");
+                    return pathWithoutToken;
+                })
+                .filter((path) => !!path);
+
+            if (filesToDelete.length > 0) {
+                const { error: deleteFilesError } = await supabase
+                    .storage
+                    .from("cards")
+                    .remove(filesToDelete);
+
+                if (deleteFilesError) {
+                    console.error("Ошибка при удалении файлов:", deleteFilesError);
+                }
+            }
+
+            const { error: deleteCardsError } = await supabase
+                .from("cards")
+                .delete()
+                .eq("category_id", categoryId);
+
+            if (deleteCardsError) {
+                console.error("Ошибка при удалении карточек:", deleteCardsError);
+                return;
+            }
+
+            const { error: deleteCategoryError } = await supabase
+                .from("categories")
+                .delete()
+                .eq("id", categoryId);
+
+            if (deleteCategoryError) {
+                console.error("Ошибка при удалении категории:", deleteCategoryError);
+                return;
+            }
+
+            if (typeof callback === 'function') {
+                callback();
+            }
+
+            await this.fetchCategories(user);
+
+        } catch (err) {
+            console.error("Ошибка при удалении категории:", err);
+        } finally {
+            runInAction(() => {
+                this.deleteCategoryLoading = false;
+            });
         }
     };
 }
 
-export const categoryStore = () => new CategoryStore()
+export const categoryStore = () => new CategoryStore();

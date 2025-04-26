@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect } from "react"
 import {
     View,
     StyleSheet,
@@ -12,10 +12,14 @@ import { observer } from "mobx-react-lite"
 import { useStores } from "@/stores/storeContext"
 import { ICategory } from "@/stores/categoryStore"
 
-const CategorySelector = () => {
+type Props = {
+    visible: boolean,
+    setVisible: (isVisible: boolean) => void
+}
+
+const CategorySelector = ({ visible, setVisible }: Props) => {
     const { user } = useAuth()
     const { categoryStore } = useStores()
-    const [dropdownVisible, setDropdownVisible] = useState(false)
 
     useEffect(() => {
         categoryStore.fetchCategories(user)
@@ -23,18 +27,20 @@ const CategorySelector = () => {
 
     const onSelectCategory = (category: ICategory) => {
         categoryStore.setSelectedCategory(category)
-        setDropdownVisible(false)
+        setVisible(false)
     }
 
     return (
-        <View style={styles.base}>
+        <View
+            style={styles.base}
+        >
             <TouchableOpacity
                 style={[
                     styles.dropdown,
                     !categoryStore.categories.length && styles.dropdownDisabled,
                 ]}
                 onPress={() =>
-                    categoryStore.categories.length && setDropdownVisible(!dropdownVisible)
+                    categoryStore.categories.length && setVisible(!visible)
                 }
                 disabled={categoryStore.fetchCategoriesLoading || !categoryStore.categories.length}
             >
@@ -49,7 +55,7 @@ const CategorySelector = () => {
                 )}
             </TouchableOpacity>
 
-            {dropdownVisible && categoryStore.categories.length > 0 && (
+            {visible && categoryStore.categories.length > 0 && (
                 <View style={styles.dropdownOverlay}>
                     <View style={styles.dropdownMenu}>
                         {categoryStore.categories.map((cat: ICategory) => (

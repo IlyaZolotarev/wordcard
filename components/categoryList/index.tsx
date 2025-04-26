@@ -52,7 +52,7 @@ const CategoryList = () => {
                             <TouchableOpacity
                                 style={styles.cardNameArea}
                                 activeOpacity={0.7}
-                                onPress={() => router.push(`/category/${item.id}`)}
+                                onPress={() => router.push(`/categoryScreen/${item.id}`)}
                             >
                                 <Text style={styles.title}>{item.name}</Text>
                             </TouchableOpacity>
@@ -91,10 +91,14 @@ const styles = StyleSheet.create({
     },
     card: {
         flex: 1,
-        backgroundColor: "#F4F4F4",
+        backgroundColor: "#fff",
         padding: 10,
         borderRadius: 12,
         marginHorizontal: 4,
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.12,
+        shadowRadius: 4,
+        elevation: 2,
     },
     cardContentRow: {
         flexDirection: "row",

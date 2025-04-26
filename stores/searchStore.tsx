@@ -52,7 +52,9 @@ export class SearchStore {
             const data = await res.json()
             const urls = data.photos.map((p: any) => p.src.medium)
 
-            this.images = [...this.images, ...urls]
+            runInAction(() => {
+                this.images = [...this.images, ...urls]
+            })
 
             if (urls.length < PER_PAGE) {
                 runInAction(() => {

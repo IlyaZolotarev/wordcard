@@ -10,7 +10,6 @@ import { Slot, usePathname } from "expo-router";
 import { PaperProvider, MD3LightTheme } from "react-native-paper";
 import BottomNavigation from "@/components/bottomNavigation";
 import { Camera } from "expo-camera";
-import Header from "@/components/header";
 import { useAuth } from "@/hooks/useAuth";
 import { Buffer } from "buffer";
 import { StoreContext } from "@/stores/storeContext";
@@ -29,7 +28,7 @@ const theme = {
 export default function Layout() {
     const { user } = useAuth();
     const pathname = usePathname()
-    const isCameraScreen = pathname === "/camera"
+    const isCameraScreen = pathname === "/cameraScreen"
 
     useEffect(() => {
         (async () => {
@@ -48,11 +47,6 @@ export default function Layout() {
                         keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
                     >
                         <View testID="KeyboardAvoidingView" style={[styles.container, isCameraScreen && styles.noPadding]}>
-                            {user && !isCameraScreen && (
-                                <View style={styles.header}>
-                                    <Header />
-                                </View>
-                            )}
                             <Slot />
                         </View>
                     </KeyboardAvoidingView>

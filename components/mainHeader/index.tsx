@@ -13,11 +13,11 @@ import { useStores } from "@/stores/storeContext"
 import { useRef } from 'react'
 import { triggerShake } from "@/lib/utils";
 
-const Header = () => {
+const MainHeader = () => {
     const { searchStore } = useStores()
     const router = useRouter()
     const pathname = usePathname()
-    const goBack = pathname !== "/home" && pathname !== "/"
+    const goBack = pathname !== "/homeScreen" && pathname !== "/"
     const headerInputShake = useRef(new Animated.Value(0)).current;
 
     const handleSubmit = () => {
@@ -25,7 +25,7 @@ const Header = () => {
             triggerShake(headerInputShake)
             return
         }
-        router.push("/search")
+        router.push("/searchScreen")
     }
 
     return (
@@ -36,12 +36,13 @@ const Header = () => {
                         icon="arrow-left"
                         size={24}
                         onPress={() => {
-                            if (pathname.includes("search")) {
-                                router.replace("/home")
+                            if (pathname.includes("searchScreen")) {
+                                router.replace("/homeScreen")
                             } else {
                                 router.back()
                             }
                         }}
+                        style={styles.arrowIcon}
                     />
                 )}
                 <View style={styles.searchContainer}>
@@ -67,7 +68,7 @@ const Header = () => {
     )
 }
 
-export default observer(Header)
+export default observer(MainHeader)
 
 const styles = StyleSheet.create({
     inner: {
@@ -79,16 +80,19 @@ const styles = StyleSheet.create({
         flex: 1,
         flexDirection: "row",
         alignItems: "center",
-
     },
     input: {
         borderBottomWidth: 1,
         borderColor: "#ddd",
         flex: 1,
-
         color: 'black'
     },
     searchIcon: {
+        margin: 0,
         marginLeft: 4,
+    },
+    arrowIcon: {
+        margin: 0,
+        marginRight: 4,
     },
 })

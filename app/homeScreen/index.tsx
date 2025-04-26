@@ -7,6 +7,7 @@ import CreateCategoryModal from "@/components/modals/createCategoryModal"
 import { useAuth } from "@/hooks/useAuth"
 import { useStores } from "@/stores/storeContext"
 import { observer } from "mobx-react-lite"
+import MainHeader from "@/components/mainHeader"
 
 const HomeScreen = () => {
     const { categoryStore, searchStore } = useStores()
@@ -26,6 +27,9 @@ const HomeScreen = () => {
 
     return (
         <View style={styles.content}>
+            <View style={styles.header}>
+                <MainHeader />
+            </View>
             <View style={styles.previewCameraWrapper}>
                 <CameraPreviewButton />
             </View>
@@ -54,22 +58,26 @@ const styles = StyleSheet.create({
         flex: 1,
         position: 'relative',
     },
+    header: {
+        marginBottom: 24,
+    },
     previewCameraWrapper: {
         marginBottom: 32,
     },
     createCategoryBtn: {
-        width: 160,
+        width: 120,
         position: 'absolute',
         justifyContent: 'center',
         bottom: 12,
         alignSelf: 'center',
-        borderWidth: 1,
-        borderColor: '#eee',
-        borderRadius: 12,
         paddingVertical: 12,
         paddingHorizontal: 24,
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: '#fff',
+        borderRadius: 12,
+        borderColor: '#b6b6b6',
+        borderWidth: 1,
     },
 })
+

@@ -20,7 +20,7 @@ export default function CameraPreviewButton() {
     }
 
     return (
-        <TouchableOpacity onPress={() => router.push("/camera")} style={styles.previewContainer}>
+        <TouchableOpacity onPress={() => router.push("/cameraScreen")} style={styles.previewContainer}>
             <CameraView style={StyleSheet.absoluteFill} facing="back" />
             <BlurView intensity={60} tint="dark" style={StyleSheet.absoluteFill}>
                 <View style={styles.iconWrapper}>

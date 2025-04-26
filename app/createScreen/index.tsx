@@ -1,10 +1,11 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { View, StyleSheet, Image, Pressable } from "react-native";
 import { observer } from "mobx-react-lite";
 import { router } from "expo-router";
 import * as FileSystem from "expo-file-system";
 import CreateCategoryModal from "@/components/modals/createCategoryModal";
 import CameraModal from "@/components/cameraModal";
+import MainHeader from "@/components/mainHeader"
 import CategorySelector from "./components/categorySelector";
 import WordInputs from "./components/wordInputs";
 import SaveButton from "./components/saveButton";
@@ -67,7 +68,7 @@ const CreateScreen = () => {
         } else {
             await createStore.saveCard(user, searchStore.selectedImageUrl, categoryStore.selectedCategory.id)
         }
-        router.replace("/home");
+        router.replace("/homeScreen");
     };
 
     const handleCreateCategory = (name: string) => {
@@ -79,11 +80,23 @@ const CreateScreen = () => {
         setModalVisible(false)
     };
 
+    useEffect(() => {
+        return () => {
+            if (searchStore.selectedImageUrl.startsWith("file://")) {
+                FileSystem.deleteAsync(searchStore.selectedImageUrl, { idempotent: true })
+                    .catch((err) => console.warn("Ошибка при очистке временного файла:", err));
+            }
+        };
+    }, []);
+
     return (
         <Pressable
             style={styles.container}
             onPress={() => dropdownVisible && setDropdownVisible(false)}
         >
+            <View style={styles.header}>
+                <MainHeader />
+            </View>
             <View style={styles.wordInputsWrapper}>
                 <WordInputs ref={wordInputsRef} />
             </View>
@@ -94,7 +107,7 @@ const CreateScreen = () => {
                 />
             </Pressable>
             <View style={styles.categoriesWrapper}>
-                <CategorySelector />
+                <CategorySelector visible={dropdownVisible} setVisible={setDropdownVisible} />
             </View>
             <SaveButton
                 ref={addCategoryButtonRef}
@@ -123,8 +136,11 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
     },
+    header: {
+        marginBottom: 24,
+    },
     wordInputsWrapper: {
-        marginBottom: 16,
+        marginBottom: 24,
     },
     categoriesWrapper: {
         marginBottom: 12,

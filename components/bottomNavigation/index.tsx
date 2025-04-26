@@ -4,20 +4,21 @@ import { MaterialCommunityIcons } from "@expo/vector-icons"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 export default function BottomNavigation() {
-    const router = useRouter()
-    const pathname = usePathname()
-    const insets = useSafeAreaInsets()
+    const router = useRouter();
+    const pathname = usePathname();
+    const insets = useSafeAreaInsets();
 
     const routes = [
-        { key: "home", icon: "home-outline" },
-        { key: "profile", icon: "account-outline" },
-    ] as const
+        { key: "homeScreen", icon: "home-outline" },
+        { key: "profileScreen", icon: "account-outline" },
+    ] as const;
 
     return (
         <View style={[styles.wrapper, { paddingBottom: insets.bottom }]}>
             {routes.map((route) => {
                 const isActive =
-                    pathname.includes(route.key) || (route.key === "home" && pathname.includes("search"))
+                    pathname.includes(route.key) || (route.key === "homeScreen" && pathname.includes("searchScreen"));
+
                 return (
                     <TouchableOpacity
                         key={route.key}
@@ -27,13 +28,14 @@ export default function BottomNavigation() {
                         <MaterialCommunityIcons
                             name={route.icon}
                             size={24}
-                            color={isActive ? "#6200ee" : "#000"}
+                            color="#000"
                         />
+                        {isActive && <View style={styles.activeLine} />}
                     </TouchableOpacity>
                 )
             })}
         </View>
-    )
+    );
 }
 
 const styles = StyleSheet.create({
@@ -49,5 +51,13 @@ const styles = StyleSheet.create({
     tab: {
         alignItems: "center",
         justifyContent: "center",
+        paddingTop: 8,
     },
-})
+    activeLine: {
+        marginTop: 4,
+        width: 24,
+        height: 2,
+        backgroundColor: "#000",
+        borderRadius: 1,
+    },
+});

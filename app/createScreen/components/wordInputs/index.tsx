@@ -78,7 +78,6 @@ const styles = StyleSheet.create({
         borderColor: "#ddd",
         backgroundColor: "transparent",
         fontSize: 24,
-        marginBottom: 16,
         textAlign: 'center'
     },
     swapBtn: {
