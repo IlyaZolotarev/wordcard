@@ -6,22 +6,27 @@ import {
     TextInput,
     Keyboard,
     TouchableWithoutFeedback,
-    Animated
+    Animated,
+    ActivityIndicator,
+    TouchableOpacity,
 } from "react-native";
 import { observer } from "mobx-react-lite";
 import { useStores } from "@/stores/storeContext";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { triggerShake } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 let debounceTimer: NodeJS.Timeout;
 
-const Header = () => {
+const CategoryHeader = () => {
     const { user } = useAuth();
-    const { categoryStore } = useStores();
+    const { categoryStore, cardStore } = useStores();
     const router = useRouter();
     const { id } = useLocalSearchParams();
     const headerInputShake = useRef(new Animated.Value(0)).current;
+    const [confirmDelete, setConfirmDelete] = useState(false);
+    const deleteTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     const handleSearch = () => {
         if (!categoryStore.searchText.trim()) {
@@ -41,8 +46,8 @@ const Header = () => {
 
         if (!text.trim()) {
             categoryStore.resetCards();
-            categoryStore.fetchCardsById(user, id as string)
-            return
+            categoryStore.fetchCardsByCategoryId(user, id as string);
+            return;
         }
 
         if (id && text.trim()) {
@@ -52,8 +57,43 @@ const Header = () => {
         }
     };
 
+    const handleDelete = async () => {
+        if (!confirmDelete) {
+            setConfirmDelete(true);
+            deleteTimeoutRef.current = setTimeout(() => {
+                setConfirmDelete(false);
+            }, 2000);
+            return;
+        }
+        cardStore.deleteSelectedCards(user, id as string);
+    };
+
+    if (cardStore.selectedCards.length) {
+        return (
+            <View style={styles.inner}>
+                {cardStore.deleteCardsLoading ? (
+                    <ActivityIndicator />
+                ) : (
+                    <TouchableOpacity
+                        onPress={handleDelete}
+                        disabled={cardStore.deleteCardsLoading}
+                    >
+                        <MaterialCommunityIcons
+                            name={confirmDelete ? "alert-outline" : "trash-can-outline"}
+                            color={confirmDelete ? "orange" : "red"}
+                            size={28}
+                        />
+                    </TouchableOpacity>
+                )}
+            </View>
+        );
+    }
+
     return (
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+        <TouchableWithoutFeedback
+            onPress={Keyboard.dismiss}
+            accessible={false}
+        >
             <View style={styles.inner}>
                 <IconButton
                     icon="arrow-left"
@@ -62,7 +102,12 @@ const Header = () => {
                     style={styles.arrowIcon}
                 />
                 <View style={styles.searchContainer}>
-                    <Animated.View style={[styles.input, { transform: [{ translateX: headerInputShake }] }]}>
+                    <Animated.View
+                        style={[
+                            styles.input,
+                            { transform: [{ translateX: headerInputShake }] },
+                        ]}
+                    >
                         <TextInput
                             value={categoryStore.searchText}
                             onChangeText={onChangeInput}
@@ -71,7 +116,6 @@ const Header = () => {
                             onSubmitEditing={handleSearch}
                         />
                     </Animated.View>
-
                     <IconButton
                         icon="magnify"
                         size={22}
@@ -84,13 +128,14 @@ const Header = () => {
     );
 };
 
-export default observer(Header);
+export default observer(CategoryHeader);
 
 const styles = StyleSheet.create({
     inner: {
-        flexDirection: "row",
-        alignItems: "center",
+        flexDirection: 'row',
         height: 44,
+        justifyContent: "center",
+        alignItems: 'center'
     },
     searchContainer: {
         flex: 1,
@@ -101,7 +146,7 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1,
         borderColor: "#ddd",
         flex: 1,
-        color: 'black',
+        color: "black",
     },
     searchIcon: {
         margin: 0,

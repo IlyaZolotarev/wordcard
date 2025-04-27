@@ -4,38 +4,45 @@ import {
     TouchableOpacity,
     View,
     ActivityIndicator,
-} from "react-native"
-import { Text } from "react-native-paper"
-import { MaterialCommunityIcons } from "@expo/vector-icons"
-import { useEffect, useState } from "react"
-import { useRouter } from "expo-router"
-import { useAuth } from "@/hooks/useAuth"
-import EditCategoryModal from "@/components/modals/editCategoryModal"
-import { useStores } from "@/stores/storeContext"
-import { observer } from "mobx-react-lite"
-
+} from "react-native";
+import { Text } from "react-native-paper";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useEffect, useState } from "react";
+import { useRouter } from "expo-router";
+import { useAuth } from "@/hooks/useAuth";
+import EditCategoryModal from "@/components/modals/editCategoryModal";
+import { useStores } from "@/stores/storeContext";
+import { observer } from "mobx-react-lite";
 
 const CategoryList = () => {
-    const { categoryStore } = useStores()
-    const { user } = useAuth()
-    const router = useRouter()
+    const { categoryStore } = useStores();
+    const { user } = useAuth();
+    const router = useRouter();
 
-    const [categoryId, setCategoryId] = useState<string | null>(null)
+    const [categoryId, setCategoryId] = useState<string | null>(null);
 
     useEffect(() => {
-        categoryStore.fetchCategories(user)
-    }, [user])
+        categoryStore.fetchCategories(user);
+    }, [user]);
 
-    if (categoryStore.fetchCategoriesLoading) return <ActivityIndicator style={{ marginTop: 20 }} />
+    if (categoryStore.fetchCategoriesLoading)
+        return <ActivityIndicator style={{ marginTop: 20 }} />;
 
-    if (!categoryStore.fetchCategoriesLoading && categoryStore.categories.length === 0) {
+    if (
+        !categoryStore.fetchCategoriesLoading &&
+        categoryStore.categories.length === 0
+    ) {
         return (
             <View style={styles.emptyWrapper}>
                 <View style={styles.emptyCard}>
-                    <MaterialCommunityIcons name="folder-outline" size={48} color="#ccc" />
+                    <MaterialCommunityIcons
+                        name="folder-outline"
+                        size={48}
+                        color="#ccc"
+                    />
                 </View>
             </View>
-        )
+        );
     }
 
     return (
@@ -47,26 +54,33 @@ const CategoryList = () => {
                 contentContainerStyle={styles.list}
                 columnWrapperStyle={styles.row}
                 renderItem={({ item }) => (
-                    <View style={styles.card}>
+                    <TouchableOpacity
+                        activeOpacity={0.7}
+                        onPress={() => router.push(`/categoryScreen/${item.id}`)}
+                        style={styles.card}
+                    >
                         <View style={styles.cardContentRow}>
-                            <TouchableOpacity
+                            <View
                                 style={styles.cardNameArea}
-                                activeOpacity={0.7}
-                                onPress={() => router.push(`/categoryScreen/${item.id}`)}
+
                             >
                                 <Text style={styles.title}>{item.name}</Text>
-                            </TouchableOpacity>
+                            </View>
                             <TouchableOpacity
                                 onPress={() => {
-                                    setCategoryId(item.id)
+                                    setCategoryId(item.id);
                                 }}
                                 style={styles.editIconBtn}
                                 hitSlop={10}
                             >
-                                <MaterialCommunityIcons name="pencil-outline" size={20} color="#666" />
+                                <MaterialCommunityIcons
+                                    name="pencil-outline"
+                                    size={20}
+                                    color="#666"
+                                />
                             </TouchableOpacity>
                         </View>
-                    </View>
+                    </TouchableOpacity>
                 )}
             />
             <EditCategoryModal
@@ -75,10 +89,10 @@ const CategoryList = () => {
                 categoryId={categoryId || ""}
             />
         </>
-    )
-}
+    );
+};
 
-export default observer(CategoryList)
+export default observer(CategoryList);
 
 const styles = StyleSheet.create({
     list: {
@@ -132,4 +146,4 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
     },
-})
+});

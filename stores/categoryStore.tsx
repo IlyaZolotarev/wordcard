@@ -48,7 +48,7 @@ export class CategoryStore {
         });
     }
 
-    fetchCardsById = async (user: User | null, categoryId: string) => {
+    fetchCardsByCategoryId = async (user: User | null, categoryId: string) => {
         if (!user || this.fetchCardsLoading || !this.hasMore) return;
 
         runInAction(() => {
