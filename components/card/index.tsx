@@ -4,6 +4,7 @@ import { TouchableOpacity, View, StyleSheet, Image } from "react-native";
 import { Text } from "react-native-paper";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { ICard } from '@/stores/cardStore'
+import CountryFlag from "react-native-country-flag";
 
 interface CardProps {
     card: ICard
@@ -22,7 +23,21 @@ const Card = ({ card }: CardProps) => {
         >
             <View style={{ opacity: cardStore.selectionMode && !selected ? 0.4 : 1 }}>
                 <Image source={{ uri: card.image_url }} style={styles.image} />
-                <Text style={styles.caption}>{card.word}</Text>
+                <View style={styles.infoWrapper}>
+                    <View style={styles.info}>
+                        <CountryFlag isoCode={card.word_lang_code} size={16} />
+                        <Text style={styles.caption}>{card.word}</Text>
+                    </View>
+                    <MaterialCommunityIcons
+                        name="arrow-down"
+                        size={12}
+                        color="#666"
+                    />
+                    <View style={styles.info}>
+                        <CountryFlag isoCode={card.trans_word_lang_code} size={16} />
+                        <Text style={styles.caption}>{card.trans_word}</Text>
+                    </View>
+                </View>
             </View>
             {selected && (
                 <View style={styles.checkIconWrapper}>
@@ -55,6 +70,14 @@ const styles = StyleSheet.create({
     image: {
         width: "100%",
         height: 120,
+    },
+    infoWrapper: {
+        justifyContent: 'center',
+        alignItems: 'center'
+    },
+    info: {
+        alignItems: 'center',
+        flexDirection: 'row'
     },
     caption: {
         padding: 8,

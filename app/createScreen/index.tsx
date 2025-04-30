@@ -100,7 +100,7 @@ const CreateScreen = () => {
             <View style={styles.wordInputsWrapper}>
                 <WordInputs ref={wordInputsRef} />
             </View>
-            <Pressable onPress={() => setIsModalVisible(true)}>
+            <Pressable style={styles.imageWrapper} onPress={() => setIsModalVisible(true)}>
                 <Image
                     source={{ uri: searchStore.selectedImageUrl }}
                     style={styles.image}
@@ -140,16 +140,20 @@ const styles = StyleSheet.create({
         marginBottom: 24,
     },
     wordInputsWrapper: {
+        marginTop: 12,
         marginBottom: 24,
     },
     categoriesWrapper: {
         marginBottom: 12,
     },
+    imageWrapper: {
+        marginBottom: 24,
+    },
     image: {
         width: "100%",
         height: 200,
         borderRadius: 16,
-        marginBottom: 24,
+        backgroundPosition: 'center'
     },
     addCategoryButton: {
         alignItems: "center",

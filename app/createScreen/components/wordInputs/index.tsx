@@ -1,15 +1,17 @@
-import { useRef, useEffect, forwardRef, useImperativeHandle } from "react";
+// components/WordInputs.tsx
 import {
     View,
     StyleSheet,
-    Text,
     TextInput,
     TouchableOpacity,
+    Text,
     Animated,
 } from "react-native";
+import { useRef, useEffect, forwardRef, useImperativeHandle } from "react";
 import { triggerShake } from "@/lib/utils";
 import { useStores } from "@/stores/storeContext";
 import { observer } from "mobx-react-lite";
+import CountrySelect from "@/components/countrySelect";
 
 type WordInputsHandle = {
     shakeWord: () => void;
@@ -18,73 +20,82 @@ type WordInputsHandle = {
 
 const WordInputs = forwardRef<WordInputsHandle>((_, ref) => {
     const { createStore, searchStore } = useStores();
-    const wordInputShake = useRef(new Animated.Value(0)).current;
-    const transWordInputShake = useRef(new Animated.Value(0)).current;
+    const wordShake = useRef(new Animated.Value(0)).current;
+    const transShake = useRef(new Animated.Value(0)).current;
 
     useEffect(() => {
         createStore.setWord(searchStore.searchText);
-
-        return () => {
-            createStore.reset()
-        }
+        return () => createStore.reset();
     }, []);
 
     useImperativeHandle(ref, () => ({
-        shakeWord: () => triggerShake(wordInputShake),
-        shakeTransWord: () => triggerShake(transWordInputShake),
+        shakeWord: () => triggerShake(wordShake),
+        shakeTransWord: () => triggerShake(transShake),
     }));
 
-    return (
-        <View style={styles.base}>
-            <Animated.View style={[styles.inputWrapper, { transform: [{ translateX: wordInputShake }] }]}>
-                <TextInput
-                    placeholder="..."
-                    value={createStore.word}
-                    onChangeText={(text) => createStore.setWord(text)}
-                    style={styles.input}
-                />
-            </Animated.View>
+    const onSelectWordCountry = (code: string) => {
+        createStore.setWordLangCode(code.toLocaleLowerCase())
+    }
+    const onSelectTransWordCountry = (code: string) => {
+        createStore.setTransWordLangCode(code.toLocaleLowerCase())
+    }
 
-            <TouchableOpacity onPress={createStore.swapWords} style={styles.swapBtn}>
+    return (
+        <View style={styles.container}>
+            <View style={styles.column}>
+                <CountrySelect defaultCountryCode="UA" onSelect={onSelectWordCountry} />
+                <Animated.View style={[styles.inputWrapper, { transform: [{ translateX: wordShake }] }]}>
+                    <TextInput
+                        value={createStore.word}
+                        onChangeText={createStore.setWord}
+                        placeholder="..."
+                        style={styles.input}
+                    />
+                </Animated.View>
+            </View>
+            <TouchableOpacity onPress={createStore.swapWords}>
                 <Text style={styles.swapText}>⇄</Text>
             </TouchableOpacity>
-
-            <Animated.View style={[styles.inputWrapper, { transform: [{ translateX: transWordInputShake }] }]}>
-                <TextInput
-                    placeholder="..."
-                    value={createStore.transWord}
-                    onChangeText={(text) => createStore.setTransWord(text)}
-                    style={styles.input}
-                />
-            </Animated.View>
+            <View style={styles.column}>
+                <CountrySelect defaultCountryCode="UA" onSelect={onSelectTransWordCountry} />
+                <Animated.View style={[styles.inputWrapper, { transform: [{ translateX: transShake }] }]}>
+                    <TextInput
+                        value={createStore.transWord}
+                        onChangeText={createStore.setTransWord}
+                        placeholder="..."
+                        style={styles.input}
+                    />
+                </Animated.View>
+            </View>
         </View>
     );
 });
 
 export default observer(WordInputs);
 
-
 const styles = StyleSheet.create({
-    base: {
+    container: {
         flexDirection: "row",
         alignItems: "center",
-        justifyContent: "space-between",
+        justifyContent: "space-around",
     },
-    inputWrapper: {
+    column: {
+        alignItems: "center",
         flex: 1,
     },
-    input: {
+    inputWrapper: {
+        marginTop: 8,
         borderBottomWidth: 1,
         borderColor: "#ddd",
-        backgroundColor: "transparent",
-        fontSize: 24,
-        textAlign: 'center'
+        width: "90%",
     },
-    swapBtn: {
-        paddingHorizontal: 8,
+    input: {
+        fontSize: 20,
+        textAlign: "center",
+        paddingVertical: 6,
     },
     swapText: {
-        fontSize: 26,
-        color: "#555",
+        fontSize: 22,
+        color: "#444",
     },
-})
+});

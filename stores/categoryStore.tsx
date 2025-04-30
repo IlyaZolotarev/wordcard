@@ -12,9 +12,11 @@ export interface ICard {
     word: string
     trans_word: string
     image_url: string
+    trans_word_lang_code: string
+    word_lang_code: string
 }
 
-const CARDS_PER_PAGE = 10;
+const CARDS_PER_PAGE = 20;
 
 export class CategoryStore {
     cards: ICard[] = [];
@@ -61,7 +63,7 @@ export class CategoryStore {
 
         const { data, error } = await supabase
             .from("cards")
-            .select("id, word, trans_word, image_url")
+            .select("id, word, trans_word, word_lang_code, trans_word_lang_code, image_url")
             .eq("category_id", categoryId)
             .range(from, to);
 
@@ -95,7 +97,7 @@ export class CategoryStore {
 
         const { data, error } = await supabase
             .from("cards")
-            .select("id, word, trans_word, image_url")
+            .select("id, word, trans_word, word_lang_code, trans_word_lang_code, image_url")
             .eq("category_id", categoryId)
             .or(`word.ilike.%${this.searchText}%,trans_word.ilike.%${this.searchText}%`)
             .range(from, to);

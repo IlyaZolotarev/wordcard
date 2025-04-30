@@ -5,6 +5,8 @@ import { User } from "@supabase/supabase-js"
 export class CreateStore {
     word = ""
     transWord = ""
+    wordLangCode = ""
+    transWordLangCode = ""
 
     constructor() {
         makeAutoObservable(this)
@@ -29,6 +31,18 @@ export class CreateStore {
         })
     }
 
+    setWordLangCode = (code: string) => {
+        runInAction(() => {
+            this.wordLangCode = code
+        })
+    }
+
+    setTransWordLangCode = (code: string) => {
+        runInAction(() => {
+            this.transWordLangCode = code
+        })
+    }
+
     swapWords = () => {
         const temp = this.word
         runInAction(() => {
@@ -46,6 +60,8 @@ export class CreateStore {
             image_url: imageUrl,
             category_id: categoryId,
             user_id: user.id,
+            word_lang_code: this.wordLangCode,
+            trans_word_lang_code: this.transWordLangCode
         });
 
         if (error) {

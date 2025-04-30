@@ -8,6 +8,8 @@ export interface ICard {
     word: string;
     trans_word: string;
     image_url: string;
+    word_lang_code: string,
+    trans_word_lang_code: string
 }
 
 export class CardStore {
