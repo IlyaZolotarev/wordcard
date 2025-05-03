@@ -62,7 +62,7 @@ export default function CreateCategoryModal({
             triggerShake(inputShake);
             return;
         }
-        onSubmit(name);
+        onSubmit(name.trim());
         setName("");
         onClose();
     };

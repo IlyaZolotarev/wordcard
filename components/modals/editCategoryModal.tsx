@@ -68,7 +68,7 @@ const EditCategoryModal = ({ visible, onClose, categoryId }: Props) => {
             return;
         }
 
-        categoryStore.updateCategory(user, categoryId, categoryName, onClose);
+        categoryStore.updateCategory(user, categoryId, categoryName.trim(), onClose);
     };
 
     const handleDelete = async () => {

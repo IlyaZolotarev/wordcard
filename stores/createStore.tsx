@@ -55,8 +55,8 @@ export class CreateStore {
         if (!user) return
 
         const { error } = await supabase.from("cards").insert({
-            word: this.word,
-            trans_word: this.transWord,
+            word: this.word.trim(),
+            trans_word: this.transWord.trim(),
             image_url: imageUrl,
             category_id: categoryId,
             user_id: user.id,
