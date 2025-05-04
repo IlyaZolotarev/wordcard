@@ -4,20 +4,27 @@ import {
     View,
     BackHandler,
     ActivityIndicator,
+    TouchableOpacity
 } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { useAuth } from "@/hooks/useAuth";
 import { useStores } from "@/stores/storeContext";
 import { observer } from "mobx-react-lite";
-import { useEffect } from "react";
+import { useEffect, useState, useRef, createRef } from "react";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import CategoryHeader from "@/components/categoryHeader";
 import Card from "@/components/card";
+import CardTemplate from "@/components/cardTemplate";
+import { ICard } from '@/stores/cardStore';
+
+type CardOrTemplate = ICard | { id: string };
 
 const CategoryScreen = () => {
     const { categoryStore, cardStore } = useStores();
     const { user } = useAuth();
     const { id } = useLocalSearchParams();
+    const [trainingMode, setTrainingMode] = useState(false);
+    const templateRefs = useRef<React.RefObject<{ cardTemplateShake: () => void }>[]>([]);
 
     useEffect(() => {
         if (id) {
@@ -47,8 +54,28 @@ const CategoryScreen = () => {
         }
     };
 
+    const onTrainHandler = () => {
+        if (trainingMode) {
+            templateRefs.current[0]?.current?.cardTemplateShake();
+        }
+        setTrainingMode(true)
+    }
+
     const renderContent = () => {
-        if (!categoryStore.fetchCardsLoading && categoryStore.cards.length === 0) {
+        const cards = categoryStore.cards;
+        const MIN_CARDS = 4;
+        const neededTemplates = Math.max(0, MIN_CARDS - cards.length);
+
+        const templates: { id: string }[] =
+            trainingMode && neededTemplates > 0
+                ? Array.from({ length: neededTemplates }).map((_, i) => ({
+                    id: `template-${i}`,
+                }))
+                : [];
+
+        const combined: CardOrTemplate[] = [...cards, ...templates];
+
+        if (!categoryStore.fetchCardsLoading && cards.length === 0 && !trainingMode) {
             return (
                 <View style={styles.emptyWrapper}>
                     <MaterialCommunityIcons
@@ -62,7 +89,7 @@ const CategoryScreen = () => {
 
         return (
             <FlatList
-                data={categoryStore.cards}
+                data={combined}
                 keyExtractor={(item) => item.id}
                 numColumns={2}
                 contentContainerStyle={styles.cardListWrapper}
@@ -74,7 +101,24 @@ const CategoryScreen = () => {
                         <ActivityIndicator style={{ marginVertical: 20 }} />
                     ) : null
                 }
-                renderItem={({ item }) => <Card card={item} />}
+                renderItem={({ item }) =>
+                    "word" in item ? (
+                        <Card card={item as ICard} />
+                    ) : (
+                        (() => {
+                            const index = templates.findIndex((t) => t.id === item.id);
+                            if (!templateRefs.current[index]) {
+                                templateRefs.current[index] = createRef();
+                            }
+                            return (
+                                <CardTemplate
+                                    ref={templateRefs.current[index]}
+                                    onPress={() => { }}
+                                />
+                            );
+                        })()
+                    )
+                }
                 showsVerticalScrollIndicator={false}
             />
         );
@@ -86,6 +130,12 @@ const CategoryScreen = () => {
                 <CategoryHeader />
             </View>
             {renderContent()}
+            <TouchableOpacity
+                style={styles.trainButton}
+                onPress={onTrainHandler}
+            >
+                <MaterialCommunityIcons name="school" size={24} color="#000" />
+            </TouchableOpacity>
         </View>
     );
 };
@@ -105,11 +155,27 @@ const styles = StyleSheet.create({
     row: {
         justifyContent: "space-between",
         marginBottom: 12,
+        marginHorizontal: 12,
     },
     emptyWrapper: {
         flex: 1,
         justifyContent: "center",
         alignItems: "center",
         paddingTop: 60,
+    },
+    trainButton: {
+        width: 80,
+        position: 'absolute',
+        justifyContent: 'center',
+        bottom: 12,
+        alignSelf: 'center',
+        paddingVertical: 12,
+        paddingHorizontal: 24,
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#fff',
+        borderRadius: 12,
+        borderColor: '#b6b6b6',
+        borderWidth: 1,
     },
 });

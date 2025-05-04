@@ -75,17 +75,23 @@ const CreateScreen = () => {
         categoryStore.createCategory(name, user);
     };
 
+    const deleteTempPhoto = () => {
+        if (searchStore.selectedImageUrl.startsWith("file://")) {
+            console.log('TETET')
+            FileSystem.deleteAsync(searchStore.selectedImageUrl, { idempotent: true })
+                .catch((err) => console.warn("Ошибка при удалении старого фото:", err));
+        }
+    }
+
     const onTakePicture = (imageUrl: string) => {
+        deleteTempPhoto()
         searchStore.setImageUrl(imageUrl);
         setModalVisible(false)
     };
 
     useEffect(() => {
         return () => {
-            if (searchStore.selectedImageUrl.startsWith("file://")) {
-                FileSystem.deleteAsync(searchStore.selectedImageUrl, { idempotent: true })
-                    .catch((err) => console.warn("Ошибка при очистке временного файла:", err));
-            }
+            deleteTempPhoto()
         };
     }, []);
 
