@@ -32,12 +32,12 @@ const CreateScreen = () => {
     const handleSave = async () => {
         if (!user) return;
 
-        if (!createStore.word) {
+        if (!createStore.word.trim()) {
             wordInputsRef.current?.shakeWord();
             return;
         }
 
-        if (!createStore.transWord) {
+        if (!createStore.transWord.trim()) {
             wordInputsRef.current?.shakeTransWord();
             return;
         }
@@ -77,7 +77,6 @@ const CreateScreen = () => {
 
     const deleteTempPhoto = () => {
         if (searchStore.selectedImageUrl.startsWith("file://")) {
-            console.log('TETET')
             FileSystem.deleteAsync(searchStore.selectedImageUrl, { idempotent: true })
                 .catch((err) => console.warn("Ошибка при удалении старого фото:", err));
         }

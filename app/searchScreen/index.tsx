@@ -13,12 +13,14 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { observer } from "mobx-react-lite";
 import { useStores } from "@/stores/storeContext";
 import { useAuth } from "@/hooks/useAuth";
+import { useLocalSearchParams } from "expo-router";
 import MainHeader from "@/components/mainHeader";
 
 const SearchScreen = () => {
     const { searchStore } = useStores();
     const router = useRouter();
     const { user } = useAuth();
+    const urlParams = useLocalSearchParams();
 
     useEffect(() => {
         searchStore.fetchImages(user, searchStore.searchText);
@@ -43,7 +45,11 @@ const SearchScreen = () => {
         if (!searchStore.loading && searchStore.images.length === 0) {
             return (
                 <View style={styles.emptyWrapper}>
-                    <MaterialCommunityIcons name="magnify-close" size={64} color="#ccc" />
+                    <MaterialCommunityIcons
+                        name={urlParams?.fromCategory ? "image-search" : "magnify-close"}
+                        size={64}
+                        color="#ccc"
+                    />
                 </View>
             );
         }
@@ -58,7 +64,9 @@ const SearchScreen = () => {
                 onEndReached={loadMore}
                 onEndReachedThreshold={0.4}
                 ListFooterComponent={
-                    searchStore.loading ? <ActivityIndicator style={{ marginVertical: 20 }} /> : null
+                    searchStore.loading ? (
+                        <ActivityIndicator style={{ marginVertical: 20 }} />
+                    ) : null
                 }
                 renderItem={({ item }) => (
                     <TouchableOpacity

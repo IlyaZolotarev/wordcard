@@ -1,15 +1,22 @@
 import { makeAutoObservable, runInAction } from "mobx";
 import { User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
-import { CategoryStore } from "@/stores/categoryStore"; // 👈 импортируем
+import { CategoryStore } from "@/stores/categoryStore";
 
 export interface ICard {
     id: string;
     word: string;
     trans_word: string;
     image_url: string;
-    word_lang_code: string,
-    trans_word_lang_code: string
+    word_lang_code: string;
+    trans_word_lang_code: string;
+
+    success_count: number;
+    fail_count: number;
+    accuracy: number;
+    streak: number;
+    last_shown_at: string | null;
+    cooldown_until: string | null;
 }
 
 export class CardStore {

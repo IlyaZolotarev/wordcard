@@ -6,7 +6,6 @@ import * as FileSystem from "expo-file-system";
 import { useRouter } from "expo-router";
 import uuid from "react-native-uuid";
 import { useStores } from "@/stores/storeContext";
-import { observer } from "mobx-react-lite";
 
 const CameraScreen = () => {
     const { searchStore } = useStores();
@@ -91,7 +90,7 @@ const CameraScreen = () => {
     );
 };
 
-export default observer(CameraScreen);
+export default CameraScreen;
 
 const styles = StyleSheet.create({
     container: {

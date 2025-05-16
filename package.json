@@ -37,6 +37,8 @@
     "expo-symbols": "~0.2.2",
     "expo-system-ui": "~4.0.9",
     "expo-web-browser": "~14.0.2",
+    "franc": "^6.2.0",
+    "franc-min": "^6.2.0",
     "mime": "^4.0.7",
     "mobx": "^6.13.7",
     "mobx-react-lite": "^4.1.0",
@@ -52,8 +54,7 @@
     "react-native-uuid": "^2.0.3",
     "react-native-vector-icons": "^10.2.0",
     "react-native-web": "~0.19.13",
-    "react-native-webview": "13.12.5",
-    "uuid": "^11.1.0"
+    "react-native-webview": "13.12.5"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

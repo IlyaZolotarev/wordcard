@@ -34,7 +34,7 @@ const CategoryList = () => {
     ) {
         return (
             <View style={styles.emptyWrapper}>
-                <View style={styles.emptyCard}>
+                <View style={styles.emptyCategoryList}>
                     <MaterialCommunityIcons
                         name="folder-outline"
                         size={48}
@@ -51,17 +51,17 @@ const CategoryList = () => {
                 data={categoryStore.categories}
                 keyExtractor={(item) => item.id}
                 numColumns={2}
-                contentContainerStyle={styles.list}
+                contentContainerStyle={styles.categoryList}
                 columnWrapperStyle={styles.row}
                 renderItem={({ item }) => (
                     <TouchableOpacity
                         activeOpacity={0.7}
                         onPress={() => router.push(`/categoryScreen/${item.id}`)}
-                        style={styles.card}
+                        style={styles.categoryWrapper}
                     >
-                        <View style={styles.cardContentRow}>
+                        <View style={styles.category}>
                             <View
-                                style={styles.cardNameArea}
+                                style={styles.categoryTitleWrapper}
 
                             >
                                 <Text style={styles.title}>{item.name}</Text>
@@ -80,10 +80,10 @@ const CategoryList = () => {
                                 />
                             </TouchableOpacity>
                         </View>
-                    </TouchableOpacity>
+                    </TouchableOpacity >
                 )}
             />
-            <EditCategoryModal
+            < EditCategoryModal
                 visible={!!categoryId}
                 onClose={() => setCategoryId(null)}
                 categoryId={categoryId || ""}
@@ -95,7 +95,7 @@ const CategoryList = () => {
 export default observer(CategoryList);
 
 const styles = StyleSheet.create({
-    list: {
+    categoryList: {
         paddingVertical: 12,
     },
     row: {
@@ -103,7 +103,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 8,
         marginBottom: 12,
     },
-    card: {
+    categoryWrapper: {
         flex: 1,
         backgroundColor: "#fff",
         padding: 10,
@@ -114,12 +114,12 @@ const styles = StyleSheet.create({
         shadowRadius: 4,
         elevation: 2,
     },
-    cardContentRow: {
+    category: {
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
     },
-    cardNameArea: {
+    categoryTitleWrapper: {
         flex: 1,
     },
     title: {
@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
     },
-    emptyCard: {
+    emptyCategoryList: {
         width: 140,
         height: 100,
         backgroundColor: "#F4F4F4",

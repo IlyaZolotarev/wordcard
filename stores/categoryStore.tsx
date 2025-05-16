@@ -1,20 +1,13 @@
 import { makeAutoObservable, runInAction } from "mobx";
 import { supabase } from "@/lib/supabase";
 import { User } from "@supabase/supabase-js";
+import { ICard } from "@/stores/cardStore";
 
 export interface ICategory {
     id: string,
     name: string
 }
 
-export interface ICard {
-    id: string,
-    word: string
-    trans_word: string
-    image_url: string
-    trans_word_lang_code: string
-    word_lang_code: string
-}
 
 const CARDS_PER_PAGE = 20;
 
@@ -31,6 +24,7 @@ export class CategoryStore {
     page = 0;
     searchText = ""
     isSearchMode = false
+    totalCardCount = 0
 
     constructor() {
         makeAutoObservable(this);
@@ -41,6 +35,7 @@ export class CategoryStore {
             this.cards = [];
             this.hasMore = true;
             this.page = 0;
+            this.totalCardCount = 0
         });
     }
 
@@ -61,28 +56,42 @@ export class CategoryStore {
         const from = this.page * CARDS_PER_PAGE;
         const to = from + CARDS_PER_PAGE - 1;
 
-        const { data, error } = await supabase
-            .from("cards")
-            .select("id, word, trans_word, word_lang_code, trans_word_lang_code, image_url")
-            .eq("category_id", categoryId)
-            .range(from, to);
+        const [cardsRes, countRes] = await Promise.all([
+            supabase
+                .from("cards")
+                .select("*")
+                .eq("category_id", categoryId)
+                .range(from, to),
+            supabase
+                .from("cards")
+                .select("*", { count: "exact", head: true })
+                .eq("category_id", categoryId),
+        ]);
 
         runInAction(() => {
             this.fetchCardsLoading = false;
         });
 
-        if (!error && data) {
-            if (data.length < CARDS_PER_PAGE) {
+        if (!cardsRes.error && cardsRes.data) {
+            if (cardsRes.data.length < CARDS_PER_PAGE) {
                 runInAction(() => {
                     this.hasMore = false;
                 });
             }
+
             runInAction(() => {
-                this.cards = [...this.cards, ...data];
+                this.cards = [...this.cards, ...cardsRes.data];
                 this.page += 1;
             });
         }
-    }
+
+        if (!countRes.error && typeof countRes.count === "number") {
+            runInAction(() => {
+                this.totalCardCount = countRes.count as number;
+            });
+        }
+    };
+
 
     searchCardsByWord = async (user: User | null, categoryId: string) => {
         if (!user || !this.searchText.trim() || this.fetchCardsLoading || !this.hasMore) return;
@@ -97,7 +106,7 @@ export class CategoryStore {
 
         const { data, error } = await supabase
             .from("cards")
-            .select("id, word, trans_word, word_lang_code, trans_word_lang_code, image_url")
+            .select("*")
             .eq("category_id", categoryId)
             .or(`word.ilike.%${this.searchText}%,trans_word.ilike.%${this.searchText}%`)
             .range(from, to);

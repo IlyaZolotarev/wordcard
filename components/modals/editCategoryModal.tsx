@@ -68,7 +68,12 @@ const EditCategoryModal = ({ visible, onClose, categoryId }: Props) => {
             return;
         }
 
-        categoryStore.updateCategory(user, categoryId, categoryName.trim(), onClose);
+        categoryStore.updateCategory(
+            user,
+            categoryId,
+            categoryName.trim(),
+            onClose
+        );
     };
 
     const handleDelete = async () => {
@@ -94,7 +99,14 @@ const EditCategoryModal = ({ visible, onClose, categoryId }: Props) => {
             animationType="fade"
             statusBarTranslucent
         >
-            <Pressable style={styles.overlay} onPress={onClose}>
+            <Pressable
+                style={styles.overlay}
+                onPress={onClose}
+                disabled={
+                    categoryStore.updateCategoryLoading ||
+                    categoryStore.deleteCategoryLoading
+                }
+            >
                 <KeyboardAvoidingView
                     behavior={Platform.OS === "ios" ? "padding" : undefined}
                     style={styles.modalWrapper}
