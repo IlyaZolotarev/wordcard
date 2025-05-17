@@ -57,10 +57,19 @@ const CategoryScreen = () => {
     }, [id]);
 
     const onTrainHandler = () => {
+        if (categoryStore.fetchCardsLoading) return;
+
+        if (cardStore.selectionMode && cardStore.selectedCards.length === 0) {
+            cardStore.toggleSelectionMode(false)
+        }
+
+        if (!showModal && cardStore.selectedCards.length === 0) {
+            setShowModal(true);
+            return;
+        }
+
         const cards = categoryStore.cards;
         const neededTemplates = Math.max(0, MIN_CARDS - cards.length);
-
-        if (categoryStore.fetchCardsLoading) return;
 
         if (!isTemplates && neededTemplates > 0) {
             showTemplates(true);
@@ -69,11 +78,6 @@ const CategoryScreen = () => {
 
         if (isTemplates) {
             templateRefs.current[0]?.current?.cardTemplateShake();
-            return;
-        }
-
-        if (!showModal && cardStore.selectedCards.length === 0) {
-            setShowModal(true);
             return;
         }
 

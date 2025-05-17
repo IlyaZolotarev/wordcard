@@ -1,7 +1,7 @@
-import { useRouter, usePathname } from "expo-router"
-import { View, TouchableOpacity, StyleSheet } from "react-native"
-import { MaterialCommunityIcons } from "@expo/vector-icons"
-import { useSafeAreaInsets } from "react-native-safe-area-context"
+import { useRouter, usePathname } from "expo-router";
+import { View, TouchableOpacity, StyleSheet } from "react-native";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function BottomNavigation() {
     const router = useRouter();
@@ -17,13 +17,15 @@ export default function BottomNavigation() {
         <View style={[styles.wrapper, { paddingBottom: insets.bottom }]}>
             {routes.map((route) => {
                 const isActive =
-                    pathname.includes(route.key) || (route.key === "homeScreen" && pathname.includes("searchScreen"));
+                    pathname.includes(route.key) ||
+                    (route.key === "homeScreen" && pathname.includes("searchScreen"));
 
                 return (
                     <TouchableOpacity
                         key={route.key}
                         onPress={() => router.push(`/${route.key}`)}
                         style={styles.tab}
+                        hitSlop={{ top: 24, bottom: 24, left: 24, right: 24 }}
                     >
                         <MaterialCommunityIcons
                             name={route.icon}
@@ -32,7 +34,7 @@ export default function BottomNavigation() {
                         />
                         {isActive && <View style={styles.activeLine} />}
                     </TouchableOpacity>
-                )
+                );
             })}
         </View>
     );

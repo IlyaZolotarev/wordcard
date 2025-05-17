@@ -54,16 +54,14 @@ const CreateScreen = () => {
                 searchStore.selectedImageUrl,
                 user.id
             );
-            if (compressedImage?.fileName && compressedImage.fileName) {
+            if (compressedImage?.fileName) {
                 await createStore.saveCardWithImageStore(
                     user,
                     compressedImage.fileName,
                     compressedImage.arrayBuffer,
                     categoryStore.selectedCategory.id
                 );
-                await FileSystem.deleteAsync(searchStore.selectedImageUrl, {
-                    idempotent: true,
-                });
+                deleteTempPhoto()
             }
         } else {
             await createStore.saveCard(user, searchStore.selectedImageUrl, categoryStore.selectedCategory.id)

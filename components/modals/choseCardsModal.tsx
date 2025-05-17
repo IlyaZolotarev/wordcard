@@ -1,4 +1,4 @@
-import React, { useState, useEffect, memo } from "react";
+import React, { useState, useEffect } from "react";
 import {
     Modal,
     StyleSheet,
@@ -8,11 +8,10 @@ import {
     Pressable,
     View,
     TouchableOpacity,
-    Text,
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { observer } from "mobx-react-lite";
 import { useStores } from "@/stores/storeContext";
+import SimpleSlider from "@/components/simpleSlider";
 
 type Props = {
     visible: boolean;
@@ -22,24 +21,12 @@ type Props = {
 
 const MIN_SLIDER_VALUE = 4;
 
-const ChoseCardsModalComponent = ({
-    visible,
-    onClose,
-    onSubmit,
-}: Props) => {
+const ChoseCardsModalComponent = ({ visible, onClose, onSubmit }: Props) => {
     const { cardStore, categoryStore } = useStores();
-    console.log(categoryStore.totalCardCount)
-    const getInitialCount = () => Math.max(MIN_SLIDER_VALUE, categoryStore.totalCardCount);
-    const [count, setCount] = useState(getInitialCount);
+
+    const max = categoryStore.totalCardCount;
+    const [count, setCount] = useState(max);
     const [activeTab, setActiveTab] = useState<0 | 1>(0);
-
-
-    useEffect(() => {
-        if (visible) {
-            const safeCount = getInitialCount();
-            setCount(prev => (prev !== safeCount ? safeCount : prev));
-        }
-    }, [visible, categoryStore.totalCardCount]);
 
     useEffect(() => {
         const backAction = () => {
@@ -53,7 +40,10 @@ const ChoseCardsModalComponent = ({
             "hardwareBackPress",
             backAction
         );
-        return () => subscription.remove();
+        return () => {
+            subscription.remove()
+            setActiveTab(0)
+        };
     }, [visible]);
 
     const handleStart = () => {
@@ -74,10 +64,7 @@ const ChoseCardsModalComponent = ({
             animationType="fade"
             statusBarTranslucent
         >
-            <Pressable
-                onPress={onClose}
-                style={styles.overlay}
-            >
+            <Pressable onPress={onClose} style={styles.overlay}>
                 <KeyboardAvoidingView
                     behavior={Platform.OS === "ios" ? "padding" : undefined}
                     style={styles.modalWrapper}
@@ -109,12 +96,17 @@ const ChoseCardsModalComponent = ({
                         {activeTab === 0 ? (
                             <View style={styles.content}>
                                 <MaterialCommunityIcons
-                                    name="view-grid"
+                                    name="cards-outline"
                                     size={32}
                                     color="#333"
+                                    style={{ marginBottom: 16 }}
                                 />
-                                <Text style={styles.countText}>{count}</Text>
-
+                                <SimpleSlider
+                                    min={MIN_SLIDER_VALUE}
+                                    max={max}
+                                    defaultValue={max}
+                                    onChange={setCount}
+                                />
                             </View>
                         ) : (
                             <Pressable onPress={toggleSelectionMode} style={styles.content}>
@@ -122,10 +114,7 @@ const ChoseCardsModalComponent = ({
                             </Pressable>
                         )}
 
-                        <TouchableOpacity
-                            style={styles.startButton}
-                            onPress={handleStart}
-                        >
+                        <TouchableOpacity style={styles.startButton} onPress={handleStart}>
                             <MaterialCommunityIcons
                                 name="play-circle-outline"
                                 size={32}
@@ -139,8 +128,7 @@ const ChoseCardsModalComponent = ({
     );
 };
 
-const ChoseCardsModal = ChoseCardsModalComponent;
-export default ChoseCardsModal;
+export default ChoseCardsModalComponent;
 
 const styles = StyleSheet.create({
     overlay: {
@@ -179,12 +167,6 @@ const styles = StyleSheet.create({
     content: {
         alignItems: "center",
         marginBottom: 20,
-    },
-    countText: {
-        fontSize: 24,
-        fontWeight: "600",
-        marginVertical: 8,
-        color: "#333",
     },
     slider: {
         width: 200,
