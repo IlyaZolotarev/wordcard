@@ -58,17 +58,28 @@ const countries = [
 
 interface Props {
     defaultCountryCode?: string;
-    onSelect: (code: string) => void;
+    onSelect?: (code: string) => void;
+    disabled?: boolean
 }
 
-export default function CountrySelect({ defaultCountryCode = "US", onSelect }: Props) {
+export default function CountrySelect({
+    defaultCountryCode = "US",
+    onSelect,
+    disabled = false
+}: Props) {
     const [modalVisible, setModalVisible] = useState(false);
     const [searchText, setSearchText] = useState("");
     const [selected, setSelected] = useState(
         countries.find((c) => c.code === defaultCountryCode) || countries[0]
     );
-
     const closeModal = () => setModalVisible(false);
+
+    useEffect(() => {
+        const match = countries.find((c) => c.code === defaultCountryCode)
+        if (match) {
+            setSelected(match)
+        }
+    }, [defaultCountryCode])
 
     useEffect(() => {
         const sub = BackHandler.addEventListener("hardwareBackPress", () => {
@@ -83,31 +94,43 @@ export default function CountrySelect({ defaultCountryCode = "US", onSelect }: P
     }, [modalVisible]);
 
     useEffect(() => {
-        onSelect(defaultCountryCode)
+        if (onSelect) {
+            onSelect(defaultCountryCode);
+        }
     }, []);
 
     const filtered = useMemo(() => {
-        return countries.filter(c =>
+        return countries.filter((c) =>
             c.name.toLowerCase().includes(searchText.toLowerCase())
         );
     }, [searchText]);
 
-    const handleSelect = (country: typeof countries[0]) => {
+    const handleSelect = (country: (typeof countries)[0]) => {
         setSelected(country);
-        onSelect(country.code);
+        if (onSelect) {
+            onSelect(country.code);
+        }
         closeModal();
     };
 
     return (
-        <View>
-            <TouchableOpacity style={styles.selectWrapper} onPress={() => setModalVisible(true)}>
+        <View style={styles.container}>
+            <TouchableOpacity
+                style={styles.selectWrapper}
+                onPress={() => !disabled ? setModalVisible(true) : null}
+            >
                 <View style={styles.select}>
                     <CountryFlag isoCode={selected.code} size={16} />
-                    <Text style={styles.arrow}>▼</Text>
+                    {!disabled && <Text style={styles.arrow}>▼</Text>}
                 </View>
             </TouchableOpacity>
 
-            <Modal visible={modalVisible} transparent animationType="fade" onRequestClose={closeModal}>
+            <Modal
+                visible={modalVisible}
+                transparent
+                animationType="fade"
+                onRequestClose={closeModal}
+            >
                 <Pressable style={styles.overlay} onPress={closeModal}>
                     <Pressable style={styles.modal} onPress={(e) => e.stopPropagation()}>
                         <View style={styles.header}>
@@ -125,7 +148,10 @@ export default function CountrySelect({ defaultCountryCode = "US", onSelect }: P
                             data={filtered}
                             keyExtractor={(item) => item.code}
                             renderItem={({ item }) => (
-                                <TouchableOpacity style={styles.item} onPress={() => handleSelect(item)}>
+                                <TouchableOpacity
+                                    style={styles.item}
+                                    onPress={() => handleSelect(item)}
+                                >
                                     <CountryFlag isoCode={item.code} size={20} />
                                     <Text style={styles.country}>{item.name}</Text>
                                 </TouchableOpacity>
@@ -141,19 +167,21 @@ export default function CountrySelect({ defaultCountryCode = "US", onSelect }: P
 }
 
 const styles = StyleSheet.create({
+    container: {
+        alignItems: 'center'
+    },
     selectWrapper: {
-        justifyContent: 'center',
-        alignItems: 'center',
-        width: 100
-    }
-    ,
+        justifyContent: "center",
+        alignItems: "center",
+        width: 100,
+    },
     select: {
         flexDirection: "row",
         alignItems: "center",
-        position: 'relative',
+        position: "relative",
     },
     arrow: {
-        position: 'absolute',
+        position: "absolute",
         right: -16,
         fontSize: 10,
         color: "#666",

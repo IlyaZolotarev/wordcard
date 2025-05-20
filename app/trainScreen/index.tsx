@@ -18,11 +18,11 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 const TrainScreen = () => {
     const { trainStore } = useStores();
     const { user } = useAuth();
-    const { categoryId } = useLocalSearchParams();
+    const { categoryId, cardsCount, card } = useLocalSearchParams();
     const router = useRouter();
 
     const { ready, loading, currentTask, isFinished, nextTask } =
-        useTrainingSession(trainStore, user, categoryId as string);
+        useTrainingSession(trainStore, user, categoryId as string, cardsCount as string);
 
     useEffect(() => {
         if (ready && isFinished) {
@@ -41,9 +41,10 @@ const TrainScreen = () => {
     if (!currentTask) return null;
 
     const isAnswered = !!currentTask.selectedCardId;
-
+    console.log(currentTask)
     return (
         <View style={styles.container}>
+            <Text style={styles.cardTitle}>{currentTask.card.label}</Text>
             <Image source={{ uri: currentTask.card.imageUrl }} style={styles.image} />
 
             <View style={styles.optionsWrapper}>
@@ -75,12 +76,14 @@ const TrainScreen = () => {
                 })}
             </View>
 
-            {isAnswered && (
-                <TouchableOpacity onPress={nextTask} style={styles.nextButton}>
-                    <MaterialCommunityIcons name="arrow-right" size={24} color="#fff" />
-                </TouchableOpacity>
-            )}
-        </View>
+            {
+                isAnswered && (
+                    <TouchableOpacity onPress={nextTask} style={styles.nextButton}>
+                        <MaterialCommunityIcons name="arrow-right" size={32} color="#fff" />
+                    </TouchableOpacity>
+                )
+            }
+        </View >
     );
 };
 
@@ -94,6 +97,11 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: "center",
         alignItems: "center",
+    },
+    cardTitle: {
+        marginBottom: 8,
+        textAlign: 'center',
+        fontSize: 24
     },
     image: {
         width: "100%",

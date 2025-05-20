@@ -31,7 +31,6 @@ const Card = ({ card }: CardProps) => {
                         <View style={styles.wordWrapper}>
                             <Text style={styles.caption}>{card.word}</Text>
                         </View>
-
                     </View>
                     <View style={styles.info}>
                         <View style={styles.flagWrapper}>
@@ -43,12 +42,12 @@ const Card = ({ card }: CardProps) => {
                     </View>
                 </View>
             </View>
-            {selected && (
+            {cardStore.selectionMode && (
                 <View style={styles.checkIconWrapper}>
                     <MaterialCommunityIcons
-                        name="check-circle"
-                        size={24}
-                        color="#4caf50"
+                        name={selected ? "check-circle" : "checkbox-blank-circle-outline"}
+                        size={16}
+                        color={selected ? "#4caf50" : "#ccc"}
                     />
                 </View>
             )}
@@ -77,7 +76,7 @@ const styles = StyleSheet.create({
     },
     infoWrapper: {
         justifyContent: "center",
-        padding: 8
+        padding: 8,
     },
     info: {
         alignItems: "center",
@@ -91,7 +90,7 @@ const styles = StyleSheet.create({
     },
     wordWrapper: {
         flex: 1,
-        justifyContent: 'center'
+        justifyContent: "center",
     },
     caption: {
         textAlign: "center",
@@ -105,5 +104,6 @@ const styles = StyleSheet.create({
         right: 8,
         backgroundColor: "#fff",
         borderRadius: 12,
+        padding: 1,
     },
 });

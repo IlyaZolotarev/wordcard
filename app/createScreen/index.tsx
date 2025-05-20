@@ -11,7 +11,7 @@ import WordInputs from "./components/wordInputs";
 import SaveButton from "./components/saveButton";
 
 import { useAuth } from "@/hooks/useAuth";
-import { compressImage } from "@/lib/upload";
+import { compressImage, IMAGE_MODE } from "@/lib/upload";
 import { useStores } from "@/stores/storeContext";
 
 const CreateScreen = () => {
@@ -30,8 +30,6 @@ const CreateScreen = () => {
     }>(null);
 
     const handleSave = async () => {
-        if (!user) return;
-
         if (!createStore.word.trim()) {
             wordInputsRef.current?.shakeWord();
             return;
@@ -49,23 +47,28 @@ const CreateScreen = () => {
 
         setSavingPreloader(true);
 
-        if (searchStore.selectedImageUrl.startsWith("file://")) {
-            const compressedImage = await compressImage(
-                searchStore.selectedImageUrl,
-                user.id
-            );
-            if (compressedImage?.fileName) {
-                await createStore.saveCardWithImageStore(
-                    user,
-                    compressedImage.fileName,
-                    compressedImage.arrayBuffer,
-                    categoryStore.selectedCategory.id
-                );
-                deleteTempPhoto()
+        const imageUri = searchStore.selectedImageUrl;
+        const categoryId = categoryStore.selectedCategory.id;
+
+        if (imageUri.startsWith("file://")) {
+            if (user) {
+                const result = await compressImage(imageUri, IMAGE_MODE.UPLOAD, user.id);
+
+                if (typeof result !== "string" && result?.fileName && result?.arrayBuffer) {
+                    await createStore.saveCardWithImageStore(user, result.fileName, result.arrayBuffer, categoryId);
+                    deleteTempPhoto();
+                }
+            } else {
+                const localResult = await compressImage(imageUri, IMAGE_MODE.LOCAL);
+                if (typeof localResult === "string") {
+                    await createStore.saveCard(null, localResult, categoryId);
+                    deleteTempPhoto();
+                }
             }
         } else {
-            await createStore.saveCard(user, searchStore.selectedImageUrl, categoryStore.selectedCategory.id)
+            await createStore.saveCard(user, imageUri, categoryId);
         }
+
         router.replace("/homeScreen");
     };
 

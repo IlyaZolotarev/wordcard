@@ -23,7 +23,7 @@ const SearchScreen = () => {
     const urlParams = useLocalSearchParams();
 
     useEffect(() => {
-        searchStore.fetchImages(user, searchStore.searchText);
+        searchStore.fetchImages(searchStore.searchText);
     }, [user]);
 
     useEffect(() => {
@@ -33,7 +33,7 @@ const SearchScreen = () => {
     }, []);
 
     const loadMore = () => {
-        searchStore.fetchImages(user, searchStore.searchText);
+        searchStore.fetchImages(searchStore.searchText);
     };
 
     const onSelectImage = (imageUrl: string) => {

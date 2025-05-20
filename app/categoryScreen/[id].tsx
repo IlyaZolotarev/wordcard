@@ -49,24 +49,19 @@ const CategoryScreen = () => {
         return () => backHandler.remove();
     }, []);
 
-    const navigateToTrainScreen = useCallback(() => {
+    const navigateToTrainScreen = useCallback((cardsCount?: number) => {
         router.push({
             pathname: "/trainScreen",
-            params: { categoryId: id },
+            params: { categoryId: id, cardsCount },
         });
     }, [id]);
 
     const onTrainHandler = () => {
         if (categoryStore.fetchCardsLoading) return;
 
-        if (cardStore.selectionMode && cardStore.selectedCards.length === 0) {
-            cardStore.toggleSelectionMode(false)
-        }
-
-        if (!showModal && cardStore.selectedCards.length === 0) {
-            setShowModal(true);
-            return;
-        }
+        // if (cardStore.selectionMode && cardStore.selectedCards.length === 0) {
+        //     cardStore.toggleSelectionMode(false)
+        // } // TODO: Finish selected card train
 
         const cards = categoryStore.cards;
         const neededTemplates = Math.max(0, MIN_CARDS - cards.length);
@@ -78,6 +73,11 @@ const CategoryScreen = () => {
 
         if (isTemplates) {
             templateRefs.current[0]?.current?.cardTemplateShake();
+            return;
+        }
+
+        if (!showModal) {
+            setShowModal(true);
             return;
         }
 

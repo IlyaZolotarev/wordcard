@@ -2,6 +2,7 @@ import { makeAutoObservable, runInAction } from "mobx";
 import { supabase } from "@/lib/supabase";
 import { User } from "@supabase/supabase-js";
 import { ICard } from "@/stores/cardStore";
+import AsyncStorage from "@react-native-async-storage/async-storage"
 
 export interface ICategory {
     id: string,
@@ -46,98 +47,155 @@ export class CategoryStore {
     }
 
     fetchCardsByCategoryId = async (user: User | null, categoryId: string) => {
-        if (!user || this.fetchCardsLoading || !this.hasMore) return;
+        if (this.fetchCardsLoading || !this.hasMore) return;
 
         runInAction(() => {
             this.fetchCardsLoading = true;
             this.isSearchMode = false;
         });
 
-        const from = this.page * CARDS_PER_PAGE;
-        const to = from + CARDS_PER_PAGE - 1;
+        try {
+            if (!user) {
+                const stored = await AsyncStorage.getItem(`local_cards_${categoryId}`);
+                const allCards = stored ? JSON.parse(stored) : [];
 
-        const [cardsRes, countRes] = await Promise.all([
-            supabase
-                .from("cards")
-                .select("*")
-                .eq("category_id", categoryId)
-                .range(from, to),
-            supabase
-                .from("cards")
-                .select("*", { count: "exact", head: true })
-                .eq("category_id", categoryId),
-        ]);
+                const from = this.page * CARDS_PER_PAGE;
+                const to = from + CARDS_PER_PAGE;
 
-        runInAction(() => {
-            this.fetchCardsLoading = false;
-        });
+                const sliced = allCards.slice(from, to);
 
-        if (!cardsRes.error && cardsRes.data) {
-            if (cardsRes.data.length < CARDS_PER_PAGE) {
                 runInAction(() => {
-                    this.hasMore = false;
+                    this.cards = [...this.cards, ...sliced];
+                    this.page += 1;
+                    this.totalCardCount = allCards.length;
+                    this.hasMore = to < allCards.length;
+                });
+
+                return;
+            }
+
+            const from = this.page * CARDS_PER_PAGE;
+            const to = from + CARDS_PER_PAGE - 1;
+
+            const [cardsRes, countRes] = await Promise.all([
+                supabase
+                    .from("cards")
+                    .select("*")
+                    .eq("category_id", categoryId)
+                    .range(from, to),
+                supabase
+                    .from("cards")
+                    .select("*", { count: "exact", head: true })
+                    .eq("category_id", categoryId),
+            ]);
+
+            if (!cardsRes.error && cardsRes.data) {
+                if (cardsRes.data.length < CARDS_PER_PAGE) {
+                    runInAction(() => {
+                        this.hasMore = false;
+                    });
+                }
+
+                runInAction(() => {
+                    this.cards = [...this.cards, ...cardsRes.data];
+                    this.page += 1;
                 });
             }
 
+            if (!countRes.error && typeof countRes.count === "number") {
+                runInAction(() => {
+                    this.totalCardCount = countRes.count as number;
+                });
+            }
+        } catch (err) {
+            console.error("Ошибка при загрузке карточек:", err);
+        } finally {
             runInAction(() => {
-                this.cards = [...this.cards, ...cardsRes.data];
-                this.page += 1;
+                this.fetchCardsLoading = false;
             });
         }
-
-        if (!countRes.error && typeof countRes.count === "number") {
-            runInAction(() => {
-                this.totalCardCount = countRes.count as number;
-            });
-        }
-    };
+    }
 
 
     searchCardsByWord = async (user: User | null, categoryId: string) => {
-        if (!user || !this.searchText.trim() || this.fetchCardsLoading || !this.hasMore) return;
+        if (!this.searchText.trim() || this.fetchCardsLoading || !this.hasMore) return;
 
         runInAction(() => {
             this.fetchCardsLoading = true;
             this.isSearchMode = true;
         });
 
-        const from = this.page * CARDS_PER_PAGE;
-        const to = from + CARDS_PER_PAGE - 1;
+        try {
+            const from = this.page * CARDS_PER_PAGE;
+            const to = from + CARDS_PER_PAGE;
 
-        const { data, error } = await supabase
-            .from("cards")
-            .select("*")
-            .eq("category_id", categoryId)
-            .or(`word.ilike.%${this.searchText}%,trans_word.ilike.%${this.searchText}%`)
-            .range(from, to);
+            if (!user) {
+                const stored = await AsyncStorage.getItem(`local_cards_${categoryId}`);
+                const allCards = stored ? JSON.parse(stored) : [];
 
-        runInAction(() => {
-            this.fetchCardsLoading = false;
-        });
+                const search = this.searchText.toLowerCase();
+                const filtered = allCards.filter((card: any) =>
+                    card.word?.toLowerCase().includes(search) ||
+                    card.trans_word?.toLowerCase().includes(search)
+                );
 
-        if (!error && data) {
-            if (data.length < CARDS_PER_PAGE) {
+                const sliced = filtered.slice(from, to);
+
                 runInAction(() => {
-                    this.hasMore = false;
+                    if (sliced.length < CARDS_PER_PAGE) this.hasMore = false;
+
+                    this.cards = this.page === 0 ? sliced : [...this.cards, ...sliced];
+                    this.page += 1;
+                });
+
+                return;
+            }
+
+            const { data, error } = await supabase
+                .from("cards")
+                .select("*")
+                .eq("category_id", categoryId)
+                .or(`word.ilike.%${this.searchText}%,trans_word.ilike.%${this.searchText}%`)
+                .range(from, to - 1);
+
+            if (!error && data) {
+                if (data.length < CARDS_PER_PAGE) {
+                    runInAction(() => {
+                        this.hasMore = false;
+                    });
+                }
+
+                runInAction(() => {
+                    this.cards = this.page === 0 ? data : [...this.cards, ...data];
+                    this.page += 1;
                 });
             }
+        } catch (err) {
+            console.error("Ошибка при поиске карточек:", err);
+        } finally {
             runInAction(() => {
-                if (this.page === 0) {
-                    this.cards = data;
-                } else {
-                    this.cards = [...this.cards, ...data];
-                }
-                this.page += 1;
+                this.fetchCardsLoading = false;
             });
         }
     }
 
     fetchCategories = async (user: User | null) => {
-        if (!user) return;
-
         runInAction(() => {
             this.fetchCategoriesLoading = true;
         });
+
+        if (!user) {
+            const stored = await AsyncStorage.getItem("local_categories");
+            const data = stored ? JSON.parse(stored) : [];
+
+            runInAction(() => {
+                this.categories = data;
+                this.selectedCategory = data[0] || null;
+                this.fetchCategoriesLoading = false;
+            });
+
+            return;
+        }
 
         const { data, error } = await supabase
             .from("categories")
@@ -158,11 +216,26 @@ export class CategoryStore {
     }
 
     createCategory = async (name: string, user: User | null) => {
-        if (!user) return;
-
         runInAction(() => {
             this.createCategoriesLoading = true;
         });
+
+        if (!user) {
+            const localId = Date.now().toString();
+            const category = { id: localId, name };
+
+            const existingRaw = await AsyncStorage.getItem("local_categories");
+            const existing = existingRaw ? JSON.parse(existingRaw) : [];
+            const updated = [...existing, category];
+            await AsyncStorage.setItem("local_categories", JSON.stringify(updated));
+
+            runInAction(() => {
+                this.createCategoriesLoading = false;
+                this.selectedCategory = category;
+            });
+            await this.fetchCategories(null);
+            return;
+        }
 
         const { data, error } = await supabase
             .from("categories")
@@ -182,38 +255,77 @@ export class CategoryStore {
         }
     }
 
-    updateCategory = async (user: User | null, categoryId: string, categoryName: string, callback?: () => void) => {
-        if (!user) return;
-
+    updateCategory = async (
+        user: User | null,
+        categoryId: string,
+        categoryName: string,
+        callback?: () => void
+    ) => {
         runInAction(() => {
             this.updateCategoryLoading = true;
         });
 
-        const { error } = await supabase
-            .from("categories")
-            .update({ name: categoryName })
-            .eq("id", categoryId);
+        try {
+            if (!user) {
+                const stored = await AsyncStorage.getItem("local_categories");
+                const categories = stored ? JSON.parse(stored) : [];
 
-        runInAction(() => {
-            this.updateCategoryLoading = false;
-        });
+                const updated = categories.map((cat: any) =>
+                    cat.id === categoryId ? { ...cat, name: categoryName } : cat
+                );
 
-        if (!error) {
-            if (typeof callback === 'function') {
-                callback();
+                await AsyncStorage.setItem("local_categories", JSON.stringify(updated));
+
+                if (typeof callback === "function") {
+                    callback();
+                }
+
+                await this.fetchCategories(null);
+                return;
             }
-            await this.fetchCategories(user);
+
+            const { error } = await supabase
+                .from("categories")
+                .update({ name: categoryName })
+                .eq("id", categoryId);
+
+            if (!error) {
+                if (typeof callback === "function") {
+                    callback();
+                }
+
+                await this.fetchCategories(user);
+            }
+        } catch (err) {
+            console.error("Ошибка при обновлении категории:", err);
+        } finally {
+            runInAction(() => {
+                this.updateCategoryLoading = false;
+            });
         }
     }
 
     deleteCategory = async (user: User | null, categoryId: string, callback?: () => void) => {
-        if (!user) return;
-
         runInAction(() => {
             this.deleteCategoryLoading = true;
         });
 
         try {
+            if (!user) {
+                const stored = await AsyncStorage.getItem("local_categories");
+                const categories = stored ? JSON.parse(stored) : [];
+
+                const updated = categories.filter((cat: any) => cat.id !== categoryId);
+                await AsyncStorage.setItem("local_categories", JSON.stringify(updated));
+
+                if (typeof callback === "function") {
+                    callback();
+                }
+
+                await this.fetchCategories(null);
+                return;
+            }
+
             const { data: cards, error: fetchError } = await supabase
                 .from("cards")
                 .select("image_url")
@@ -266,7 +378,7 @@ export class CategoryStore {
                 return;
             }
 
-            if (typeof callback === 'function') {
+            if (typeof callback === "function") {
                 callback();
             }
 
@@ -279,7 +391,7 @@ export class CategoryStore {
                 this.deleteCategoryLoading = false;
             });
         }
-    };
+    }
 }
 
 export const categoryStore = () => new CategoryStore();

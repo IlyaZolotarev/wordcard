@@ -37,8 +37,8 @@ export class SearchStore {
         })
     }
 
-    fetchImages = async (user: User | null, searchText: string) => {
-        if (!user || !searchText || this.loading || !this.hasMore) return
+    fetchImages = async (searchText: string) => {
+        if (!searchText || this.loading || !this.hasMore) return
 
         runInAction(() => {
             this.loading = true

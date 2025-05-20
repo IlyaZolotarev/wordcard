@@ -4,8 +4,6 @@ import { User } from "@supabase/supabase-js";
 import { ICard } from "@/stores/cardStore";
 import uuid from "react-native-uuid";
 
-const TASKS_PER_SESSION = 10;
-const CARDS_FETCH_LIMIT = 30;
 
 interface TrainingTask {
     taskId: string;
@@ -13,6 +11,7 @@ interface TrainingTask {
         id: string;
         imageUrl: string;
         correctWord: string;
+        label: string
     };
     answers: {
         cardId: string;
@@ -52,7 +51,7 @@ export class TrainStore {
         });
     }
 
-    async fetchTrainCards(user: User, categoryId: string) {
+    async fetchTrainCards(user: User, categoryId: string, cardsCount: string) {
         if (!user) return;
 
         runInAction(() => {
@@ -71,7 +70,7 @@ export class TrainStore {
             .or(`cooldown_until.is.null,cooldown_until.lt.${now}`)
             .order("accuracy", { ascending: true })
             .order("last_shown_at", { ascending: true })
-            .limit(CARDS_FETCH_LIMIT);
+            .limit(Number(cardsCount));
 
         if (err1) {
             console.error("Ошибка при получении карточек для тренировки:", err1);
@@ -91,9 +90,8 @@ export class TrainStore {
 
     buildTrainingTasks(cards: ICard[]): TrainingTask[] {
         const shuffled = [...cards].sort(() => Math.random() - 0.5);
-        const taskPool = shuffled.slice(0, TASKS_PER_SESSION);
 
-        return taskPool.map((card) => {
+        return shuffled.map((card) => {
             const correctCard = card;
 
             const distractors = cards
@@ -116,6 +114,7 @@ export class TrainStore {
                     id: correctCard.id,
                     imageUrl: correctCard.image_url,
                     correctWord: correctCard.trans_word,
+                    label: correctCard.word
                 },
                 answers: answerList,
             };

@@ -29,6 +29,9 @@ export default function Layout() {
     const { user } = useAuth();
     const pathname = usePathname()
     const isCameraScreen = pathname === "/cameraScreen"
+    const isOnboardingScreen = pathname === "/onboardingScreen"
+    // const showNavigation = user && !isCameraScreen && !isOnboardingScreen TODO: Finish non auth 
+    const showNavigation = !isCameraScreen && !isOnboardingScreen
 
     useEffect(() => {
         (async () => {
@@ -50,7 +53,7 @@ export default function Layout() {
                             <Slot />
                         </View>
                     </KeyboardAvoidingView>
-                    {user && !isCameraScreen && <BottomNavigation />}
+                    {showNavigation && <BottomNavigation />}
                 </SafeAreaView>
             </PaperProvider>
         </StoreContext.Provider>

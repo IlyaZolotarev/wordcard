@@ -5,7 +5,8 @@ import { User } from "@supabase/supabase-js";
 export const useTrainingSession = (
     store: TrainStore,
     user: User | null,
-    categoryId: string
+    categoryId: string,
+    cardsCount: string
 ) => {
     const [ready, setReady] = useState(false);
 
@@ -14,7 +15,7 @@ export const useTrainingSession = (
 
         const load = async () => {
             if (user && categoryId) {
-                await store.fetchTrainCards(user, categoryId);
+                await store.fetchTrainCards(user, categoryId, cardsCount);
                 if (isMounted) setReady(true);
             }
         };

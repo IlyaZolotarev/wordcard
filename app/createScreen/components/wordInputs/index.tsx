@@ -1,4 +1,3 @@
-// components/WordInputs.tsx
 import {
     View,
     StyleSheet,
@@ -33,17 +32,17 @@ const WordInputs = forwardRef<WordInputsHandle>((_, ref) => {
         shakeTransWord: () => triggerShake(transShake),
     }));
 
-    const onSelectWordCountry = (code: string) => {
-        createStore.setWordLangCode(code.toLocaleLowerCase())
-    }
-    const onSelectTransWordCountry = (code: string) => {
-        createStore.setTransWordLangCode(code.toLocaleLowerCase())
-    }
+    // const onSelectWordCountry = (code: string) => {
+    //     createStore.setWordLangCode(code.toLocaleLowerCase())
+    // }
+    // const onSelectTransWordCountry = (code: string) => {
+    //     createStore.setTransWordLangCode(code.toLocaleLowerCase())
+    // }
 
     return (
         <View style={styles.container}>
             <View style={styles.column}>
-                <CountrySelect defaultCountryCode="UA" onSelect={onSelectWordCountry} />
+                <CountrySelect disabled defaultCountryCode="UA" />
                 <Animated.View style={[styles.inputWrapper, { transform: [{ translateX: wordShake }] }]}>
                     <TextInput
                         value={createStore.word}
@@ -57,7 +56,7 @@ const WordInputs = forwardRef<WordInputsHandle>((_, ref) => {
                 <Text style={styles.swapText}>⇄</Text>
             </TouchableOpacity>
             <View style={styles.column}>
-                <CountrySelect defaultCountryCode="UA" onSelect={onSelectTransWordCountry} />
+                <CountrySelect disabled defaultCountryCode="UA" />
                 <Animated.View style={[styles.inputWrapper, { transform: [{ translateX: transShake }] }]}>
                     <TextInput
                         value={createStore.transWord}
@@ -95,7 +94,13 @@ const styles = StyleSheet.create({
         paddingVertical: 6,
     },
     swapText: {
-        fontSize: 22,
-        color: "#444",
+        backgroundColor: "#fff",
+        padding: 10,
+        borderRadius: 12,
+        marginHorizontal: 4,
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.12,
+        shadowRadius: 4,
+        elevation: 2,
     },
 });
