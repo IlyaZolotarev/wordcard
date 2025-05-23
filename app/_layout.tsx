@@ -14,6 +14,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Buffer } from "buffer";
 import { StoreContext } from "@/stores/storeContext";
 import { rootStore } from "@/stores/rootStore";
+import { useStores } from "@/stores/storeContext";
 
 global.Buffer = Buffer;
 const theme = {
@@ -26,6 +27,7 @@ const theme = {
 };
 
 export default function Layout() {
+    const { userStore } = useStores();
     const { user } = useAuth();
     const pathname = usePathname()
     const isCameraScreen = pathname === "/cameraScreen"
@@ -38,6 +40,10 @@ export default function Layout() {
             await Camera.requestCameraPermissionsAsync();
         })();
     }, []);
+
+    useEffect(() => {
+        userStore.fetchLangCode(user)
+    }, [user?.id]);
 
     return (
         <StoreContext.Provider value={rootStore}>

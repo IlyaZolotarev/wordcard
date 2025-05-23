@@ -2,6 +2,7 @@ import { makeAutoObservable, runInAction } from "mobx";
 import { User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 import { CategoryStore } from "@/stores/categoryStore";
+import AsyncStorage from "@react-native-async-storage/async-storage"
 
 export interface ICard {
     id: string;
@@ -75,19 +76,34 @@ export class CardStore {
     };
 
     deleteSelectedCards = async (user: User | null, categoryId: string) => {
-        if (!user || this.selectedCards.length === 0) return;
+        if (this.selectedCards.length === 0) return;
 
         runInAction(() => {
             this.deleteCardsLoading = true;
         });
 
         try {
+            if (!user) {
+                const raw = await AsyncStorage.getItem(`local_cards_${categoryId}`);
+                const existing = raw ? JSON.parse(raw) : [];
+
+                const remaining = existing.filter(
+                    (card: any) => !this.selectedCards.find(sel => sel.id === card.id)
+                );
+
+                await AsyncStorage.setItem(`local_cards_${categoryId}`, JSON.stringify(remaining));
+
+                this.resetSelection();
+                this.categoryStore.resetCards();
+                await this.categoryStore.fetchCardsByCategoryId(null, categoryId);
+                return;
+            }
+
             const filesToDelete = this.selectedCards
                 .map((card) => {
                     if (!card.image_url) return null;
                     const parts = card.image_url.split("/storage/v1/object/sign/cards/");
                     if (!parts[1]) return null;
-
                     const [pathWithoutToken] = parts[1].split("?");
                     return pathWithoutToken;
                 })
@@ -116,9 +132,8 @@ export class CardStore {
             }
 
             this.resetSelection();
-
             this.categoryStore.resetCards();
-            this.categoryStore.fetchCardsByCategoryId(user, categoryId);
+            await this.categoryStore.fetchCardsByCategoryId(user, categoryId);
 
         } catch (err) {
             console.error("Ошибка при удалении выбранных карточек:", err);
@@ -127,7 +142,8 @@ export class CardStore {
                 this.deleteCardsLoading = false;
             });
         }
-    };
+    }
+
 }
 
 export const cardStore = (categoryStore: CategoryStore) => new CardStore(categoryStore);

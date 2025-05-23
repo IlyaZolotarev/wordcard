@@ -3,7 +3,7 @@ import { supabase } from "@/lib/supabase";
 import { User } from "@supabase/supabase-js";
 import { ICard } from "@/stores/cardStore";
 import uuid from "react-native-uuid";
-
+import AsyncStorage from "@react-native-async-storage/async-storage"
 
 interface TrainingTask {
     taskId: string;
@@ -51,9 +51,7 @@ export class TrainStore {
         });
     }
 
-    async fetchTrainCards(user: User, categoryId: string, cardsCount: string) {
-        if (!user) return;
-
+    async fetchTrainCards(user: User | null, categoryId: string, cardsCount: string) {
         runInAction(() => {
             this.loading = true;
             this.resetTraining();
@@ -61,22 +59,44 @@ export class TrainStore {
 
         let hasError = false;
         let cards: ICard[] = [];
-        const now = new Date().toISOString();
 
-        const { data: primary, error: err1 } = await supabase
-            .from("cards")
-            .select("*")
-            .eq("category_id", categoryId)
-            .or(`cooldown_until.is.null,cooldown_until.lt.${now}`)
-            .order("accuracy", { ascending: true })
-            .order("last_shown_at", { ascending: true })
-            .limit(Number(cardsCount));
+        try {
+            if (!user) {
+                const stored = await AsyncStorage.getItem(`local_cards_${categoryId}`);
+                const allCards: ICard[] = stored ? JSON.parse(stored) : [];
 
-        if (err1) {
-            console.error("Ошибка при получении карточек для тренировки:", err1);
+                const sorted = allCards
+                    .sort((a, b) => {
+                        const accA = a.accuracy ?? 0;
+                        const accB = b.accuracy ?? 0;
+                        if (accA !== accB) return accA - accB;
+
+                        const timeA = a.last_shown_at ? new Date(a.last_shown_at).getTime() : 0;
+                        const timeB = b.last_shown_at ? new Date(b.last_shown_at).getTime() : 0;
+                        return timeA - timeB;
+                    })
+                    .slice(0, Number(cardsCount));
+
+                cards = sorted;
+            } else {
+                const { data: primary, error } = await supabase
+                    .from("cards")
+                    .select("*")
+                    .eq("category_id", categoryId)
+                    .order("accuracy", { ascending: true })
+                    .order("last_shown_at", { ascending: true })
+                    .limit(Number(cardsCount));
+
+                if (error) {
+                    console.error("Ошибка при получении карточек для тренировки:", error);
+                    hasError = true;
+                } else {
+                    cards = (primary as ICard[]) || [];
+                }
+            }
+        } catch (err) {
+            console.error("Ошибка при получении карточек:", err);
             hasError = true;
-        } else {
-            cards = (primary as ICard[]) || [];
         }
 
         runInAction(() => {
@@ -87,6 +107,7 @@ export class TrainStore {
             }
         });
     }
+
 
     buildTrainingTasks(cards: ICard[]): TrainingTask[] {
         const shuffled = [...cards].sort(() => Math.random() - 0.5);
@@ -121,7 +142,7 @@ export class TrainStore {
         });
     }
 
-    selectAnswer(taskId: string, selectedCardId: string) {
+    selectAnswer(user: User | null, taskId: string, selectedCardId: string, categoryId: string) {
         const task = this.tasks.find(t => t.taskId === taskId);
         if (!task || task.selectedCardId !== undefined) return;
 
@@ -134,10 +155,12 @@ export class TrainStore {
             task.selectedCardId = selectedCardId;
         });
 
-        this.submitAnswer(task.card.id, isCorrect, task.usedHint ?? false);
+        this.submitAnswer(user, categoryId, task.card.id, isCorrect, task.usedHint ?? false);
     }
 
     async submitAnswer(
+        user: User | null,
+        categoryId: string,
         cardId: string,
         isCorrect: boolean,
         usedHint: boolean = false
@@ -151,45 +174,49 @@ export class TrainStore {
         if (isCorrect) {
             success_count++;
             if (!usedHint) streak++;
-
-            const applyCooldown =
-                success_count + fail_count >= 3 &&
-                success_count / (success_count + fail_count) > 0.85 &&
-                streak >= 3 &&
-                !usedHint;
-
-            const cooldownUntil = applyCooldown
-                ? new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString()
-                : null;
-
-            const { error } = await supabase
-                .from("cards")
-                .update({
-                    success_count,
-                    streak,
-                    accuracy: success_count / (success_count + fail_count),
-                    last_shown_at: now,
-                    cooldown_until: cooldownUntil,
-                })
-                .eq("id", cardId);
-
-            if (error) console.error("Ошибка при обновлении карточки:", error);
         } else {
             fail_count++;
             streak = 0;
+        }
 
-            const { error } = await supabase
-                .from("cards")
-                .update({
-                    fail_count,
-                    streak,
-                    accuracy: success_count / (success_count + fail_count),
-                    last_shown_at: now,
-                    cooldown_until: null,
-                })
-                .eq("id", cardId);
+        const accuracy = success_count + fail_count > 0
+            ? success_count / (success_count + fail_count)
+            : 0;
 
-            if (error) console.error("Ошибка при обновлении карточки:", error);
+        const updatedCard = {
+            ...card,
+            success_count,
+            fail_count,
+            streak,
+            accuracy,
+            last_shown_at: now,
+        };
+
+        if (!user) {
+            const stored = await AsyncStorage.getItem(`local_cards_${categoryId}`);
+            const allCards: ICard[] = stored ? JSON.parse(stored) : [];
+
+            const updated = allCards.map((c) =>
+                c.id === cardId ? updatedCard : c
+            );
+
+            await AsyncStorage.setItem(`local_cards_${categoryId}`, JSON.stringify(updated));
+            return;
+        }
+
+        const { error } = await supabase
+            .from("cards")
+            .update({
+                success_count,
+                fail_count,
+                streak,
+                accuracy,
+                last_shown_at: now,
+            })
+            .eq("id", cardId);
+
+        if (error) {
+            console.error("Ошибка при обновлении карточки:", error);
         }
     }
 

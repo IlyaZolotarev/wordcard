@@ -93,12 +93,6 @@ export default function CountrySelect({
         return () => sub.remove();
     }, [modalVisible]);
 
-    useEffect(() => {
-        if (onSelect) {
-            onSelect(defaultCountryCode);
-        }
-    }, []);
-
     const filtered = useMemo(() => {
         return countries.filter((c) =>
             c.name.toLowerCase().includes(searchText.toLowerCase())

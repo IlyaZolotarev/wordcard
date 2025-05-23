@@ -9,12 +9,11 @@ export const useTrainingSession = (
     cardsCount: string
 ) => {
     const [ready, setReady] = useState(false);
-
     useEffect(() => {
         let isMounted = true;
 
         const load = async () => {
-            if (user && categoryId) {
+            if (categoryId) {
                 await store.fetchTrainCards(user, categoryId, cardsCount);
                 if (isMounted) setReady(true);
             }
@@ -30,7 +29,7 @@ export const useTrainingSession = (
     const current = store.currentTask;
     const next = () => store.goToNextTask();
     const submit = (isCorrect: boolean, usedHint = false) =>
-        store.submitAnswer(current?.card.id || "", isCorrect, usedHint);
+        store.submitAnswer(user, categoryId, current?.card.id || "", isCorrect, usedHint);
 
     return {
         ready,

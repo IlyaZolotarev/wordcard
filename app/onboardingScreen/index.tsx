@@ -5,11 +5,13 @@ import { router } from "expo-router"
 import * as Localization from "expo-localization"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { Ionicons, MaterialIcons } from "@expo/vector-icons"
+import { useStores } from "@/stores/storeContext";
 
 export default function OnboardingScreen() {
+    const { userStore } = useStores();
     const [step, setStep] = useState(0)
     const [nativeLang, setNativeLang] = useState<string | null>(null)
-    const [learnLang, setLearnLang] = useState("FR")
+    const [learnLang, setLearnLang] = useState("US")
 
     useEffect(() => {
         const locales = Localization.getLocales()
@@ -31,12 +33,16 @@ export default function OnboardingScreen() {
 
     const next = async () => {
         if (step === 1 && nativeLang && learnLang) {
-            await AsyncStorage.setItem("onboarding_done", "1")
-            router.replace("/homeScreen")
+            await AsyncStorage.setItem("onboarding_done", "1");
+            await AsyncStorage.setItem("native_lang", nativeLang);
+            await AsyncStorage.setItem("learn_lang", learnLang);
+            userStore.setLangCodes(nativeLang, learnLang)
+
+            router.replace("/homeScreen");
         } else {
-            setStep((s) => s + 1)
+            setStep((s) => s + 1);
         }
-    }
+    };
 
     const prev = () => {
         if (step > 0) setStep((s) => s - 1)
@@ -45,7 +51,7 @@ export default function OnboardingScreen() {
     const title = step === 0
         ? "Выберите язык, на котором вы говорите"
         : "Выберите язык, который хотите выучить"
-    console.log(step === 0 ? nativeLang : learnLang)
+
     return (
         <View style={styles.container}>
             <View style={styles.iconWrapper}>
@@ -57,10 +63,17 @@ export default function OnboardingScreen() {
 
             <Text style={styles.title}>{title}</Text>
 
-            {nativeLang && (
+            {step === 0 && (
                 <CountrySelect
-                    defaultCountryCode={step === 0 ? nativeLang : learnLang}
-                    onSelect={(val) => step === 0 ? setNativeLang(val) : setLearnLang(val)}
+                    defaultCountryCode={nativeLang || undefined}
+                    onSelect={setNativeLang}
+                />
+            )}
+
+            {step === 1 && (
+                <CountrySelect
+                    defaultCountryCode={learnLang || undefined}
+                    onSelect={setLearnLang}
                 />
             )}
 

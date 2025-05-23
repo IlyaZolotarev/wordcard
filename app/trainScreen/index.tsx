@@ -18,17 +18,19 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 const TrainScreen = () => {
     const { trainStore } = useStores();
     const { user } = useAuth();
-    const { categoryId, cardsCount, card } = useLocalSearchParams();
+    const { categoryId, cardsCount } = useLocalSearchParams();
     const router = useRouter();
 
     const { ready, loading, currentTask, isFinished, nextTask } =
         useTrainingSession(trainStore, user, categoryId as string, cardsCount as string);
 
     useEffect(() => {
-        if (ready && isFinished) {
+        if (user === undefined) return;
+
+        if (ready && isFinished && trainStore.tasks.length > 0) {
             router.push("/finishTrainScreen");
         }
-    }, [ready, isFinished]);
+    }, [ready, isFinished, user]);
 
     if (loading || !ready) {
         return (
@@ -41,7 +43,7 @@ const TrainScreen = () => {
     if (!currentTask) return null;
 
     const isAnswered = !!currentTask.selectedCardId;
-    console.log(currentTask)
+
     return (
         <View style={styles.container}>
             <Text style={styles.cardTitle}>{currentTask.card.label}</Text>
@@ -65,7 +67,7 @@ const TrainScreen = () => {
                             style={[styles.option, { backgroundColor: bgColor }]}
                             onPress={() => {
                                 if (!isAnswered) {
-                                    trainStore.selectAnswer(currentTask.taskId, answer.cardId);
+                                    trainStore.selectAnswer(user, currentTask.taskId, answer.cardId, categoryId as string);
                                 }
                             }}
                             disabled={isAnswered}

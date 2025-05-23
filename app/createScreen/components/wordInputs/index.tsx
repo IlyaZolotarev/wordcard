@@ -18,7 +18,7 @@ type WordInputsHandle = {
 };
 
 const WordInputs = forwardRef<WordInputsHandle>((_, ref) => {
-    const { createStore, searchStore } = useStores();
+    const { createStore, searchStore, userStore } = useStores();
     const wordShake = useRef(new Animated.Value(0)).current;
     const transShake = useRef(new Animated.Value(0)).current;
 
@@ -32,18 +32,19 @@ const WordInputs = forwardRef<WordInputsHandle>((_, ref) => {
         shakeTransWord: () => triggerShake(transShake),
     }));
 
-    // const onSelectWordCountry = (code: string) => {
-    //     createStore.setWordLangCode(code.toLocaleLowerCase())
-    // }
-    // const onSelectTransWordCountry = (code: string) => {
-    //     createStore.setTransWordLangCode(code.toLocaleLowerCase())
-    // }
-
     return (
         <View style={styles.container}>
             <View style={styles.column}>
-                <CountrySelect disabled defaultCountryCode="UA" />
-                <Animated.View style={[styles.inputWrapper, { transform: [{ translateX: wordShake }] }]}>
+                <CountrySelect
+                    disabled
+                    defaultCountryCode={userStore.nativeLangCode}
+                />
+                <Animated.View
+                    style={[
+                        styles.inputWrapper,
+                        { transform: [{ translateX: wordShake }] },
+                    ]}
+                >
                     <TextInput
                         value={createStore.word}
                         onChangeText={createStore.setWord}
@@ -56,8 +57,16 @@ const WordInputs = forwardRef<WordInputsHandle>((_, ref) => {
                 <Text style={styles.swapText}>⇄</Text>
             </TouchableOpacity>
             <View style={styles.column}>
-                <CountrySelect disabled defaultCountryCode="UA" />
-                <Animated.View style={[styles.inputWrapper, { transform: [{ translateX: transShake }] }]}>
+                <CountrySelect
+                    disabled
+                    defaultCountryCode={userStore.learnLangCode}
+                />
+                <Animated.View
+                    style={[
+                        styles.inputWrapper,
+                        { transform: [{ translateX: transShake }] },
+                    ]}
+                >
                     <TextInput
                         value={createStore.transWord}
                         onChangeText={createStore.setTransWord}

@@ -312,11 +312,13 @@ export class CategoryStore {
 
         try {
             if (!user) {
-                const stored = await AsyncStorage.getItem("local_categories");
-                const categories = stored ? JSON.parse(stored) : [];
+                const storedCategories = await AsyncStorage.getItem("local_categories");
+                const categories = storedCategories ? JSON.parse(storedCategories) : [];
 
-                const updated = categories.filter((cat: any) => cat.id !== categoryId);
-                await AsyncStorage.setItem("local_categories", JSON.stringify(updated));
+                const updatedCategories = categories.filter((cat: any) => cat.id !== categoryId);
+                await AsyncStorage.setItem("local_categories", JSON.stringify(updatedCategories));
+
+                await AsyncStorage.removeItem(`local_cards_${categoryId}`);
 
                 if (typeof callback === "function") {
                     callback();
@@ -392,6 +394,7 @@ export class CategoryStore {
             });
         }
     }
+
 }
 
 export const categoryStore = () => new CategoryStore();

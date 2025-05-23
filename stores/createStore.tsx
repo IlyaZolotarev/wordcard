@@ -2,14 +2,16 @@ import { makeAutoObservable, runInAction } from "mobx";
 import { supabase } from "@/lib/supabase";
 import { User } from "@supabase/supabase-js";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import uuid from "react-native-uuid";
+import { UserStore } from "@/stores/userStore";
 
 export class CreateStore {
     word = "";
     transWord = "";
-    wordLangCode = "";
-    transWordLangCode = "";
+    userStore: UserStore
 
-    constructor() {
+    constructor(userStore: UserStore) {
+        this.userStore = userStore
         makeAutoObservable(this);
     }
 
@@ -32,18 +34,6 @@ export class CreateStore {
         });
     };
 
-    setWordLangCode = (code: string) => {
-        runInAction(() => {
-            this.wordLangCode = code;
-        });
-    };
-
-    setTransWordLangCode = (code: string) => {
-        runInAction(() => {
-            this.transWordLangCode = code;
-        });
-    };
-
     swapWords = () => {
         const temp = this.word;
         runInAction(() => {
@@ -57,38 +47,39 @@ export class CreateStore {
         imageUrl: string,
         categoryId: string
     ) => {
-        const card = {
-            id: Date.now().toString(),
+        const commonData = {
             word: this.word.trim(),
             trans_word: this.transWord.trim(),
             image_url: imageUrl,
             category_id: categoryId,
-            word_lang_code: this.wordLangCode,
-            trans_word_lang_code: this.transWordLangCode,
+            word_lang_code: this.userStore.nativeLangCode,
+            trans_word_lang_code: this.userStore.learnLangCode,
         };
 
         if (!user) {
+            const cardWithId = {
+                id: uuid.v4(),
+                ...commonData,
+            };
+
             const stored = await AsyncStorage.getItem(`local_cards_${categoryId}`);
             const existing = stored ? JSON.parse(stored) : [];
 
-            const updated = [...existing, card];
-            await AsyncStorage.setItem(
-                `local_cards_${categoryId}`,
-                JSON.stringify(updated)
-            );
-
+            const updated = [...existing, cardWithId];
+            await AsyncStorage.setItem(`local_cards_${categoryId}`, JSON.stringify(updated));
             return;
         }
 
         const { error } = await supabase.from("cards").insert({
-            ...card,
+            ...commonData,
             user_id: user.id,
         });
 
         if (error) {
             console.error("Ошибка при сохранении карточки:", error);
         }
-    };
+    }
+
 
     saveCardWithImageStore = async (
         user: User | null,
@@ -120,4 +111,4 @@ export class CreateStore {
     };
 }
 
-export const createStore = () => new CreateStore();
+export const createStore = (userStore: UserStore) => new CreateStore(userStore);
