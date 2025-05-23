@@ -6,7 +6,7 @@ import {
     Platform,
     View,
 } from "react-native";
-import { Slot, usePathname } from "expo-router";
+import { Slot, usePathname, router } from "expo-router";
 import { PaperProvider, MD3LightTheme } from "react-native-paper";
 import BottomNavigation from "@/components/bottomNavigation";
 import { Camera } from "expo-camera";
@@ -49,25 +49,18 @@ export default function Layout() {
     }, [user?.id]);
 
     useEffect(() => {
-        const handleDeepLink = async ({ url }: { url: string }) => {
-            if (!url) return;
+        const handleDeepLink = ({ url }: { url: string }) => {
+            const parsed = Linking.parse(url);
+            const path = parsed.path;
 
-            const isAuthCallback =
-                url.includes("access_token=") || url.includes("token=") || url.includes("type=magiclink") || url.includes("type=signup");
-
-            if (!isAuthCallback) return;
-
-            if (user) return;
-
-            try {
-                await rootStore.authStore.handleDeepLink(url);
-            } catch (e) {
-                console.warn("Ошибка обработки ссылки", e);
+            if (path?.includes("auth/callback")) {
+                router.replace("/homeScreen");
             }
         };
 
         const subscription = Linking.addEventListener("url", handleDeepLink);
 
+        // Для открытия при старте
         Linking.getInitialURL().then((url) => {
             if (url) handleDeepLink({ url });
         });
@@ -75,8 +68,7 @@ export default function Layout() {
         return () => {
             subscription.remove();
         };
-    }, [user?.id]);
-
+    }, []);
 
     return (
         <StoreContext.Provider value={rootStore}>

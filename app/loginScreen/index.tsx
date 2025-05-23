@@ -1,35 +1,15 @@
-import { useState } from "react"
 import { Text, TouchableOpacity } from "react-native"
 import { TextInput, Button } from "react-native-paper"
-import { supabase } from "@/lib/supabase"
-import { useRouter } from "expo-router"
+import { Redirect, useRouter } from "expo-router"
 import { useAuth } from "@/hooks/useAuth"
-import { Redirect } from "expo-router"
+import { observer } from "mobx-react-lite"
+import { useStores } from "@/stores/storeContext"
 
-export default function Login() {
-    const [email, setEmail] = useState("")
-    const [password, setPassword] = useState("")
-    const [loading, setLoading] = useState(false)
-    const [error, setError] = useState("")
-    const router = useRouter()
-
-    const handleLogin = async () => {
-        setLoading(true)
-        setError("")
-        const { error } = await supabase.auth.signInWithPassword({
-            email,
-            password,
-        })
-
-        if (error) {
-            setError(error.message)
-        } else {
-            router.replace("/homeScreen")
-        }
-        setLoading(false)
-    }
-
+function LoginScreen() {
+    const { authStore } = useStores()
     const { user } = useAuth()
+    const router = useRouter();
+
     if (user) return <Redirect href="/homeScreen" />
 
     return (
@@ -37,8 +17,8 @@ export default function Login() {
             <TextInput
                 label="Email"
                 mode="outlined"
-                value={email}
-                onChangeText={setEmail}
+                value={authStore.email}
+                onChangeText={authStore.setEmail}
                 autoCapitalize="none"
                 keyboardType="email-address"
                 style={{ marginBottom: 12 }}
@@ -46,23 +26,29 @@ export default function Login() {
             <TextInput
                 label="Пароль"
                 mode="outlined"
-                value={password}
-                onChangeText={setPassword}
+                value={authStore.password}
+                onChangeText={authStore.setPassword}
                 secureTextEntry
                 style={{ marginBottom: 12 }}
             />
-            {error ? <Text style={{ color: "red", marginBottom: 12 }}>{error}</Text> : null}
+            {authStore.error ? (
+                <Text style={{ color: "red", marginBottom: 12 }}>{authStore.error}</Text>
+            ) : null}
             <Button
                 mode="contained"
-                onPress={handleLogin}
-                loading={loading}
-                disabled={loading}
+                onPress={authStore.login}
+                loading={authStore.loading}
+                disabled={authStore.loading}
                 style={{ marginBottom: 20 }}
             >
                 Войти
             </Button>
 
-            <TouchableOpacity onPress={() => router.push("/registerScreen")}>
+            <TouchableOpacity onPress={() => {
+                authStore.reset();
+                authStore.setConfirmPassword("");
+                router.push("/registerScreen");
+            }}>
                 <Text style={{ textAlign: "center", color: "#4E9EFF" }}>
                     Нет аккаунта? Зарегистрироваться
                 </Text>
@@ -70,3 +56,5 @@ export default function Login() {
         </>
     )
 }
+
+export default observer(LoginScreen)

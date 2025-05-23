@@ -13,6 +13,6 @@ export default function Index() {
         )
     }, [])
 
-    if (!onboarded) return <Redirect href="/onboardingScreen" />
+    // if (!onboarded) return <Redirect href="/onboardingScreen" />
     return <Redirect href={user ? "/homeScreen" : "/loginScreen"} />
 }

@@ -4,6 +4,7 @@ import { searchStore } from "./searchStore";
 import { cardStore } from "./cardStore";
 import { trainStore } from "./trainStore";
 import { userStore } from "./userStore";
+import { authStore } from "./authStore";
 
 const category = categoryStore();
 const user = userStore();
@@ -17,4 +18,5 @@ export const rootStore = {
   cardStore: card,
   trainStore: trainStore(),
   userStore: user,
+  authStore: authStore(),
 };

@@ -1,52 +1,24 @@
-import { useState } from "react"
-import { Text, TouchableOpacity } from "react-native"
-import { TextInput, Button } from "react-native-paper"
-import { supabase } from "@/lib/supabase"
-import { useRouter } from "expo-router"
-import { useAuth } from "@/hooks/useAuth"
-import { Redirect } from "expo-router"
+import { Text, TouchableOpacity } from "react-native";
+import { TextInput, Button } from "react-native-paper";
+import { Redirect, useRouter } from "expo-router";
+import { observer } from "mobx-react-lite";
+import { useAuth } from "@/hooks/useAuth";
+import { useStores } from "@/stores/storeContext";
 
-export default function Register() {
-    const [email, setEmail] = useState("")
-    const [password, setPassword] = useState("")
-    const [confirmPassword, setConfirmPassword] = useState("")
-    const [loading, setLoading] = useState(false)
-    const [error, setError] = useState("")
-    const router = useRouter()
+function RegisterScreen() {
+    const { authStore } = useStores();
+    const { user } = useAuth();
+    const router = useRouter();
 
-    const handleRegister = async () => {
-        setError("")
-
-        if (password !== confirmPassword) {
-            setError("Пароли не совпадают")
-            return
-        }
-
-        setLoading(true)
-        const { error } = await supabase.auth.signUp({
-            email,
-            password,
-        })
-
-        if (error) {
-            setError(error.message)
-        } else {
-            router.replace("/homeScreen")
-        }
-
-        setLoading(false)
-    }
-
-    const { user } = useAuth()
-    if (user) return <Redirect href="/homeScreen" />
+    if (user) return <Redirect href="/homeScreen" />;
 
     return (
         <>
             <TextInput
                 label="Email"
                 mode="outlined"
-                value={email}
-                onChangeText={setEmail}
+                value={authStore.email}
+                onChangeText={authStore.setEmail}
                 autoCapitalize="none"
                 keyboardType="email-address"
                 style={{ marginBottom: 12 }}
@@ -54,35 +26,46 @@ export default function Register() {
             <TextInput
                 label="Пароль"
                 mode="outlined"
-                value={password}
-                onChangeText={setPassword}
+                value={authStore.password}
+                onChangeText={authStore.setPassword}
                 secureTextEntry
                 style={{ marginBottom: 12 }}
             />
             <TextInput
                 label="Повторите пароль"
                 mode="outlined"
-                value={confirmPassword}
-                onChangeText={setConfirmPassword}
+                value={authStore.confirmPassword}
+                onChangeText={authStore.setConfirmPassword}
                 secureTextEntry
                 style={{ marginBottom: 12 }}
             />
-            {error ? <Text style={{ color: "red", marginBottom: 12 }}>{error}</Text> : null}
+            {authStore.error ? (
+                <Text style={{ color: "red", marginBottom: 12 }}>
+                    {authStore.error}
+                </Text>
+            ) : null}
             <Button
                 mode="contained"
-                onPress={handleRegister}
-                loading={loading}
-                disabled={loading}
+                onPress={authStore.register}
+                loading={authStore.loading}
+                disabled={authStore.loading}
                 style={{ marginBottom: 20 }}
             >
                 Зарегистрироваться
             </Button>
 
-            <TouchableOpacity onPress={() => router.push("/loginScreen")}>
+            <TouchableOpacity
+                onPress={() => {
+                    authStore.reset();
+                    router.push("/loginScreen");
+                }}
+            >
                 <Text style={{ textAlign: "center", color: "#4E9EFF" }}>
                     Авторизация
                 </Text>
             </TouchableOpacity>
         </>
-    )
+    );
 }
+
+export default observer(RegisterScreen);
