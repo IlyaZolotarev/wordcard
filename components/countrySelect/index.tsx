@@ -112,6 +112,7 @@ export default function CountrySelect({
             <TouchableOpacity
                 style={styles.selectWrapper}
                 onPress={() => !disabled ? setModalVisible(true) : null}
+                hitSlop={{ left: 25, right: 25 }}
             >
                 <View style={styles.select}>
                     <CountryFlag isoCode={selected.code} size={16} />

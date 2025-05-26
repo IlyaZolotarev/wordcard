@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import {
     SafeAreaView,
     StyleSheet,
@@ -6,18 +5,17 @@ import {
     Platform,
     View,
 } from "react-native";
-import { Slot, usePathname } from "expo-router";
+import { Slot, usePathname, useRouter } from "expo-router";
 import { PaperProvider, MD3LightTheme } from "react-native-paper";
 import BottomNavigation from "@/components/bottomNavigation";
-import { Camera } from "expo-camera";
-import { useAuth } from "@/hooks/useAuth";
-import { Buffer } from "buffer";
 import { StoreContext } from "@/stores/storeContext";
 import { rootStore } from "@/stores/rootStore";
-import { useStores } from "@/stores/storeContext";
+import { Camera } from "expo-camera";
+import { useEffect } from "react";
 import * as Linking from "expo-linking";
 
-global.Buffer = Buffer;
+let lastDeepLinkUrl: string | null = null;
+export const getLastDeepLink = () => lastDeepLinkUrl;
 
 const theme = {
     ...MD3LightTheme,
@@ -28,9 +26,8 @@ const theme = {
     },
 };
 
-export default function Layout() {
-    const { userStore } = useStores();
-    const { user } = useAuth();
+const Layout = () => {
+    const router = useRouter();
     const pathname = usePathname();
     const isCameraScreen = pathname === "/cameraScreen";
     const isOnboardingScreen = pathname === "/onboardingScreen";
@@ -43,40 +40,16 @@ export default function Layout() {
     }, []);
 
     useEffect(() => {
-        if (user) {
-            userStore.fetchLangCode(user);
-        }
-    }, [user?.id]);
+        const sub = Linking.addEventListener("url", ({ url }) => {
+            lastDeepLinkUrl = url;
 
-    useEffect(() => {
-        const handleDeepLink = async ({ url }: { url: string }) => {
-            if (!url) return;
-
-            const isAuthCallback =
-                url.includes("access_token=") || url.includes("token=") || url.includes("type=magiclink") || url.includes("type=signup");
-
-            if (!isAuthCallback) return;
-
-            if (user) return;
-
-            try {
-                await rootStore.authStore.handleDeepLink(url);
-            } catch (e) {
-                console.warn("Ошибка обработки ссылки", e);
+            if (url.includes("authCallback")) {
+                router.replace("/authCallback");
             }
-        };
-
-        const subscription = Linking.addEventListener("url", handleDeepLink);
-
-        Linking.getInitialURL().then((url) => {
-            if (url) handleDeepLink({ url });
         });
 
-        return () => {
-            subscription.remove();
-        };
-    }, [user?.id]);
-
+        return () => sub.remove();
+    }, []);
 
     return (
         <StoreContext.Provider value={rootStore}>
@@ -87,9 +60,7 @@ export default function Layout() {
                         behavior={Platform.OS === "ios" ? "padding" : undefined}
                         keyboardVerticalOffset={Platform.OS === "ios" ? 80 : 0}
                     >
-                        <View
-                            style={[styles.container, isCameraScreen && styles.noPadding]}
-                        >
+                        <View style={[styles.container, isCameraScreen && styles.noPadding]}>
                             <Slot />
                         </View>
                     </KeyboardAvoidingView>
@@ -98,7 +69,9 @@ export default function Layout() {
             </PaperProvider>
         </StoreContext.Provider>
     );
-}
+};
+
+export default Layout;
 
 const styles = StyleSheet.create({
     safe: {

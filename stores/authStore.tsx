@@ -2,7 +2,6 @@ import { makeAutoObservable, runInAction } from "mobx"
 import { supabase } from "@/lib/supabase"
 import { router } from "expo-router"
 import AsyncStorage from "@react-native-async-storage/async-storage"
-import * as Linking from "expo-linking"
 
 export class AuthStore {
     email = ""
@@ -109,18 +108,31 @@ export class AuthStore {
         router.replace("/homeScreen")
     }
 
-    handleDeepLink = async (url: string) => {
-        const { data, error } = await supabase.auth.exchangeCodeForSession(url)
+    handleDeepLink = async (access_token: string, refresh_token: string) => {
+        try {
+            const { error } = await supabase.auth.setSession({ access_token, refresh_token });
 
-        if (error || !data?.user) {
-            this.error = error?.message || "Ошибка входа через ссылку"
-            return
+            if (error) {
+                this.error = error.message || "Ошибка установки сессии";
+                return;
+            }
+
+            const { data: userData, error: userError } = await supabase.auth.getUser();
+            const userId = userData?.user?.id;
+
+            if (userError || !userId) {
+                this.error = "Не удалось получить ID пользователя";
+                return;
+            }
+
+            await this.syncLocalDataToSupabase(userId);
+            await AsyncStorage.clear();
+            router.replace("/homeScreen");
+        } catch (err) {
+            console.error("💥 Ошибка в handleDeepLink:", err);
+            this.error = "Не удалось авторизоваться";
         }
-
-        await this.syncLocalDataToSupabase(data.user.id)
-        await AsyncStorage.clear()
-        router.replace("/homeScreen")
-    }
+    };
 
     private syncLocalDataToSupabase = async (userId: string) => {
         const [nativeLang, learnLang] = await Promise.all([
@@ -129,11 +141,19 @@ export class AuthStore {
         ])
 
         if (nativeLang || learnLang) {
-            await supabase.from("users").upsert({
-                id: userId,
-                native_lang: nativeLang,
-                learn_lang: learnLang,
-            })
+            const { error } = await supabase
+                .from("users")
+                .upsert({
+                    id: userId,
+                    native_lang: nativeLang,
+                    learn_lang: learnLang,
+                })
+                .select()
+                .single();
+
+            if (error) {
+                console.error("Ошибка upsert в users", error.message);
+            }
         }
 
         const storedCategories = await AsyncStorage.getItem("local_categories")
