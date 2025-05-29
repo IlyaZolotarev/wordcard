@@ -7,7 +7,6 @@ import {
     ActivityIndicator,
 } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
-import { useAuth } from "@/hooks/useAuth"
 import { observer } from "mobx-react-lite"
 import { useStores } from "@/stores/storeContext"
 import { ICategory } from "@/stores/categoryStore"
@@ -18,12 +17,11 @@ type Props = {
 }
 
 const CategorySelector = ({ visible, setVisible }: Props) => {
-    const { user } = useAuth()
     const { categoryStore } = useStores()
 
     useEffect(() => {
-        categoryStore.fetchCategories(user)
-    }, [user])
+        categoryStore.fetchCategories()
+    }, [])
 
     const onSelectCategory = (category: ICategory) => {
         categoryStore.setSelectedCategory(category)

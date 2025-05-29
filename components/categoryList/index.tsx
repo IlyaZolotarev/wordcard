@@ -9,21 +9,19 @@ import { Text } from "react-native-paper";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
 import { useRouter } from "expo-router";
-import { useAuth } from "@/hooks/useAuth";
 import EditCategoryModal from "@/components/modals/editCategoryModal";
 import { useStores } from "@/stores/storeContext";
 import { observer } from "mobx-react-lite";
 
 const CategoryList = () => {
     const { categoryStore } = useStores();
-    const { user } = useAuth();
     const router = useRouter();
 
     const [categoryId, setCategoryId] = useState<string | null>(null);
 
     useEffect(() => {
-        categoryStore.fetchCategories(user);
-    }, [user]);
+        categoryStore.fetchCategories();
+    }, []);
 
     if (categoryStore.fetchCategoriesLoading)
         return <ActivityIndicator style={{ marginTop: 20 }} />;

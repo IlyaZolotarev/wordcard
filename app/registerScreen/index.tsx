@@ -2,15 +2,13 @@ import { Text, TouchableOpacity } from "react-native";
 import { TextInput, Button } from "react-native-paper";
 import { Redirect, useRouter } from "expo-router";
 import { observer } from "mobx-react-lite";
-import { useAuth } from "@/hooks/useAuth";
 import { useStores } from "@/stores/storeContext";
 
 function RegisterScreen() {
     const { authStore } = useStores();
-    const { user } = useAuth();
     const router = useRouter();
 
-    if (user) return <Redirect href="/homeScreen" />;
+    if (authStore.session?.access_token) return <Redirect href="/homeScreen" />;
 
     return (
         <>

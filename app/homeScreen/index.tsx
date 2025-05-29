@@ -4,7 +4,6 @@ import { View, StyleSheet, TouchableOpacity } from "react-native"
 import CategoryList from "@/components/categoryList"
 import { MaterialCommunityIcons } from "@expo/vector-icons"
 import CreateCategoryModal from "@/components/modals/createCategoryModal"
-import { useAuth } from "@/hooks/useAuth"
 import { useStores } from "@/stores/storeContext"
 import { observer } from "mobx-react-lite"
 import MainHeader from "@/components/mainHeader"
@@ -12,10 +11,9 @@ import MainHeader from "@/components/mainHeader"
 const HomeScreen = () => {
     const { categoryStore, searchStore } = useStores()
     const [showModal, setShowModal] = useState(false)
-    const { user } = useAuth()
 
-    const handleCreateCategory = (name: string) => {
-        categoryStore.createCategory(name, user);
+    const handleCreateCategory = (categoryName: string) => {
+        categoryStore.createCategory(categoryName);
     };
 
     useEffect(() => {

@@ -9,7 +9,6 @@ import {
 import { observer } from "mobx-react-lite";
 import { useTrainingSession } from "@/hooks/useTrainingSession";
 import { useStores } from "@/stores/storeContext";
-import { useAuth } from "@/hooks/useAuth";
 import { useLocalSearchParams } from "expo-router";
 import { useRouter } from "expo-router";
 import { useEffect } from "react";
@@ -17,20 +16,17 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 const TrainScreen = () => {
     const { trainStore } = useStores();
-    const { user } = useAuth();
     const { categoryId, cardsCount } = useLocalSearchParams();
     const router = useRouter();
 
     const { ready, loading, currentTask, isFinished, nextTask } =
-        useTrainingSession(trainStore, user, categoryId as string, cardsCount as string);
+        useTrainingSession(trainStore, categoryId as string, cardsCount as string);
 
     useEffect(() => {
-        if (user === undefined) return;
-
         if (ready && isFinished && trainStore.tasks.length > 0) {
             router.push("/finishTrainScreen");
         }
-    }, [ready, isFinished, user]);
+    }, [ready, isFinished]);
 
     if (loading || !ready) {
         return (
@@ -67,7 +63,7 @@ const TrainScreen = () => {
                             style={[styles.option, { backgroundColor: bgColor }]}
                             onPress={() => {
                                 if (!isAnswered) {
-                                    trainStore.selectAnswer(user, currentTask.taskId, answer.cardId, categoryId as string);
+                                    trainStore.selectAnswer(currentTask.taskId, answer.cardId, categoryId as string);
                                 }
                             }}
                             disabled={isAnswered}

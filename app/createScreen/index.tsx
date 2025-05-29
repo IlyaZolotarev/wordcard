@@ -9,14 +9,11 @@ import MainHeader from "@/components/mainHeader"
 import CategorySelector from "./components/categorySelector";
 import WordInputs from "./components/wordInputs";
 import SaveButton from "./components/saveButton";
-
-import { useAuth } from "@/hooks/useAuth";
 import { compressImage, IMAGE_MODE } from "@/lib/upload";
 import { useStores } from "@/stores/storeContext";
 
 const CreateScreen = () => {
-    const { createStore, categoryStore, searchStore } = useStores();
-    const { user } = useAuth();
+    const { createStore, categoryStore, searchStore, authStore } = useStores();
     const [modalVisible, setModalVisible] = useState(false);
     const [dropdownVisible, setDropdownVisible] = useState(false);
     const [savingPreloader, setSavingPreloader] = useState(false);
@@ -51,29 +48,29 @@ const CreateScreen = () => {
         const categoryId = categoryStore.selectedCategory.id;
 
         if (imageUri.startsWith("file://")) {
-            if (user) {
-                const result = await compressImage(imageUri, IMAGE_MODE.UPLOAD, user.id);
+            if (authStore.session?.user.id) {
+                const result = await compressImage(imageUri, IMAGE_MODE.UPLOAD, authStore.session.user.id);
 
                 if (typeof result !== "string" && result?.fileName && result?.arrayBuffer) {
-                    await createStore.saveCardWithImageStore(user, result.fileName, result.arrayBuffer, categoryId);
+                    await createStore.saveCardWithImageStore(result.fileName, result.arrayBuffer, categoryId);
                     deleteTempPhoto();
                 }
             } else {
                 const localResult = await compressImage(imageUri, IMAGE_MODE.LOCAL);
                 if (typeof localResult === "string") {
-                    await createStore.saveCard(null, localResult, categoryId);
+                    await createStore.saveCard(localResult, categoryId);
                     deleteTempPhoto();
                 }
             }
         } else {
-            await createStore.saveCard(user, imageUri, categoryId);
+            await createStore.saveCard(imageUri, categoryId);
         }
 
         router.replace("/homeScreen");
     };
 
-    const handleCreateCategory = (name: string) => {
-        categoryStore.createCategory(name, user);
+    const handleCreateCategory = (categoryName: string) => {
+        categoryStore.createCategory(categoryName);
     };
 
     const deleteTempPhoto = () => {

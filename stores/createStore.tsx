@@ -1,17 +1,19 @@
 import { makeAutoObservable, runInAction } from "mobx";
 import { supabase } from "@/lib/supabase";
-import { User } from "@supabase/supabase-js";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import uuid from "react-native-uuid";
 import { UserStore } from "@/stores/userStore";
+import { AuthStore } from "@/stores/authStore";
 
 export class CreateStore {
     word = "";
     transWord = "";
     userStore: UserStore
+    authStore: AuthStore
 
-    constructor(userStore: UserStore) {
+    constructor(userStore: UserStore, authStore: AuthStore) {
         this.userStore = userStore
+        this.authStore = authStore
         makeAutoObservable(this);
     }
 
@@ -43,7 +45,6 @@ export class CreateStore {
     };
 
     saveCard = async (
-        user: User | null,
         imageUrl: string,
         categoryId: string
     ) => {
@@ -56,7 +57,7 @@ export class CreateStore {
             trans_word_lang_code: this.userStore.learnLangCode,
         };
 
-        if (!user) {
+        if (!this.authStore.session) {
             const cardWithId = {
                 id: uuid.v4(),
                 ...commonData,
@@ -72,7 +73,7 @@ export class CreateStore {
 
         const { error } = await supabase.from("cards").insert({
             ...commonData,
-            user_id: user.id,
+            user_id: this.authStore.session.user.id,
         });
 
         if (error) {
@@ -82,12 +83,11 @@ export class CreateStore {
 
 
     saveCardWithImageStore = async (
-        user: User | null,
         fileName: string,
         arrayBuffer: ArrayBuffer,
         categoryId: string
     ) => {
-        if (!user) return;
+        if (!this.authStore.session) return
 
         const { error } = await supabase.storage
             .from("cards")
@@ -106,9 +106,9 @@ export class CreateStore {
             .createSignedUrl(fileName, 60 * 60 * 24 * 7);
 
         if (signed?.signedUrl) {
-            await this.saveCard(user, signed.signedUrl, categoryId);
+            await this.saveCard(signed.signedUrl, categoryId);
         }
     };
 }
 
-export const createStore = (userStore: UserStore) => new CreateStore(userStore);
+export const createStore = (userStore: UserStore, authStore: AuthStore) => new CreateStore(userStore, authStore);

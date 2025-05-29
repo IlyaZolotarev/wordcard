@@ -1,8 +1,8 @@
 import { makeAutoObservable, runInAction } from "mobx";
 import { supabase } from "@/lib/supabase";
-import { User } from "@supabase/supabase-js";
 import { ICard } from "@/stores/cardStore";
 import AsyncStorage from "@react-native-async-storage/async-storage"
+import { AuthStore } from "@/stores/authStore";
 
 export interface ICategory {
     id: string,
@@ -26,8 +26,10 @@ export class CategoryStore {
     searchText = ""
     isSearchMode = false
     totalCardCount = 0
+    authStore: AuthStore;
 
-    constructor() {
+    constructor(authStore: AuthStore) {
+        this.authStore = authStore;
         makeAutoObservable(this);
     }
 
@@ -46,7 +48,7 @@ export class CategoryStore {
         });
     }
 
-    fetchCardsByCategoryId = async (user: User | null, categoryId: string) => {
+    fetchCardsByCategoryId = async (categoryId: string) => {
         if (this.fetchCardsLoading || !this.hasMore) return;
 
         runInAction(() => {
@@ -55,7 +57,7 @@ export class CategoryStore {
         });
 
         try {
-            if (!user) {
+            if (!this.authStore.session) {
                 const stored = await AsyncStorage.getItem(`local_cards_${categoryId}`);
                 const allCards = stored ? JSON.parse(stored) : [];
 
@@ -117,7 +119,7 @@ export class CategoryStore {
     }
 
 
-    searchCardsByWord = async (user: User | null, categoryId: string) => {
+    searchCardsByWord = async (categoryId: string) => {
         if (!this.searchText.trim() || this.fetchCardsLoading || !this.hasMore) return;
 
         runInAction(() => {
@@ -129,7 +131,7 @@ export class CategoryStore {
             const from = this.page * CARDS_PER_PAGE;
             const to = from + CARDS_PER_PAGE;
 
-            if (!user) {
+            if (!this.authStore.session) {
                 const stored = await AsyncStorage.getItem(`local_cards_${categoryId}`);
                 const allCards = stored ? JSON.parse(stored) : [];
 
@@ -179,12 +181,12 @@ export class CategoryStore {
         }
     }
 
-    fetchCategories = async (user: User | null) => {
+    fetchCategories = async () => {
         runInAction(() => {
             this.fetchCategoriesLoading = true;
         });
 
-        if (!user) {
+        if (!this.authStore.session) {
             const stored = await AsyncStorage.getItem("local_categories");
             const data = stored ? JSON.parse(stored) : [];
 
@@ -200,7 +202,7 @@ export class CategoryStore {
         const { data, error } = await supabase
             .from("categories")
             .select("id, name")
-            .eq("user_id", user.id);
+            .eq("user_id", this.authStore.session.user.id);
 
         runInAction(() => {
             if (!error && data) {
@@ -215,12 +217,12 @@ export class CategoryStore {
         this.selectedCategory = cat;
     }
 
-    createCategory = async (name: string, user: User | null) => {
+    createCategory = async (name: string) => {
         runInAction(() => {
             this.createCategoriesLoading = true;
         });
 
-        if (!user) {
+        if (!this.authStore.session) {
             const localId = Date.now().toString();
             const category = { id: localId, name };
 
@@ -233,13 +235,13 @@ export class CategoryStore {
                 this.createCategoriesLoading = false;
                 this.selectedCategory = category;
             });
-            await this.fetchCategories(null);
+            await this.fetchCategories();
             return;
         }
 
         const { data, error } = await supabase
             .from("categories")
-            .insert({ name, user_id: user.id })
+            .insert({ name, user_id: this.authStore.session.user.id })
             .select("id, name")
             .single();
 
@@ -248,7 +250,7 @@ export class CategoryStore {
         });
 
         if (!error && data) {
-            await this.fetchCategories(user);
+            await this.fetchCategories();
             runInAction(() => {
                 this.selectedCategory = data;
             });
@@ -256,7 +258,6 @@ export class CategoryStore {
     }
 
     updateCategory = async (
-        user: User | null,
         categoryId: string,
         categoryName: string,
         callback?: () => void
@@ -266,7 +267,7 @@ export class CategoryStore {
         });
 
         try {
-            if (!user) {
+            if (!this.authStore.session) {
                 const stored = await AsyncStorage.getItem("local_categories");
                 const categories = stored ? JSON.parse(stored) : [];
 
@@ -280,7 +281,7 @@ export class CategoryStore {
                     callback();
                 }
 
-                await this.fetchCategories(null);
+                await this.fetchCategories();
                 return;
             }
 
@@ -294,7 +295,7 @@ export class CategoryStore {
                     callback();
                 }
 
-                await this.fetchCategories(user);
+                await this.fetchCategories();
             }
         } catch (err) {
             console.error("Ошибка при обновлении категории:", err);
@@ -305,13 +306,13 @@ export class CategoryStore {
         }
     }
 
-    deleteCategory = async (user: User | null, categoryId: string, callback?: () => void) => {
+    deleteCategory = async (categoryId: string, callback?: () => void) => {
         runInAction(() => {
             this.deleteCategoryLoading = true;
         });
 
         try {
-            if (!user) {
+            if (!this.authStore.session) {
                 const storedCategories = await AsyncStorage.getItem("local_categories");
                 const categories = storedCategories ? JSON.parse(storedCategories) : [];
 
@@ -324,7 +325,7 @@ export class CategoryStore {
                     callback();
                 }
 
-                await this.fetchCategories(null);
+                await this.fetchCategories();
                 return;
             }
 
@@ -384,7 +385,7 @@ export class CategoryStore {
                 callback();
             }
 
-            await this.fetchCategories(user);
+            await this.fetchCategories();
 
         } catch (err) {
             console.error("Ошибка при удалении категории:", err);
@@ -397,4 +398,4 @@ export class CategoryStore {
 
 }
 
-export const categoryStore = () => new CategoryStore();
+export const categoryStore = (authStore: AuthStore) => new CategoryStore(authStore);

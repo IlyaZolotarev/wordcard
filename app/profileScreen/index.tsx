@@ -1,16 +1,31 @@
-import { View, Text, Pressable, StyleSheet } from "react-native";
-import { router } from "expo-router";
+import { View, Text, Pressable, StyleSheet } from "react-native"
+import { router } from "expo-router"
+import { observer } from "mobx-react-lite"
+import { useStores } from "@/stores/storeContext";
 
-export default function Profile() {
+export default observer(function Profile() {
+    const { authStore } = useStores()
+
+    const handleLogout = () => {
+        authStore.logout()
+    }
+
     return (
         <View style={styles.container}>
             <Text style={styles.title}>Профиль</Text>
-            <Pressable style={styles.button} onPress={() => router.push("/loginScreen")}>
-                <Text style={styles.buttonText}>Войти</Text>
-            </Pressable>
+
+            {authStore.session ? (
+                <Pressable style={styles.button} onPress={handleLogout}>
+                    <Text style={styles.buttonText}>Выйти</Text>
+                </Pressable>
+            ) : (
+                <Pressable style={styles.button} onPress={() => router.push("/loginScreen")}>
+                    <Text style={styles.buttonText}>Войти</Text>
+                </Pressable>
+            )}
         </View>
-    );
-}
+    )
+})
 
 const styles = StyleSheet.create({
     container: {
@@ -33,4 +48,4 @@ const styles = StyleSheet.create({
         color: "#fff",
         fontSize: 16,
     },
-});
+})

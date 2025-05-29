@@ -12,19 +12,17 @@ import {
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { observer } from "mobx-react-lite";
 import { useStores } from "@/stores/storeContext";
-import { useAuth } from "@/hooks/useAuth";
 import { useLocalSearchParams } from "expo-router";
 import MainHeader from "@/components/mainHeader";
 
 const SearchScreen = () => {
     const { searchStore } = useStores();
     const router = useRouter();
-    const { user } = useAuth();
     const urlParams = useLocalSearchParams();
 
     useEffect(() => {
         searchStore.fetchImages(searchStore.searchText);
-    }, [user]);
+    }, []);
 
     useEffect(() => {
         return () => {

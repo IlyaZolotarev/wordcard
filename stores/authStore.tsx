@@ -2,6 +2,7 @@ import { makeAutoObservable, runInAction } from "mobx"
 import { supabase } from "@/lib/supabase"
 import { router } from "expo-router"
 import AsyncStorage from "@react-native-async-storage/async-storage"
+import { Session, User } from "@supabase/supabase-js";
 
 export class AuthStore {
     email = ""
@@ -9,9 +10,46 @@ export class AuthStore {
     confirmPassword = ""
     error = ""
     loading = false
+    user: User | null = null;
+    session: Session | null = null;
 
     constructor() {
         makeAutoObservable(this)
+    }
+
+    init = async () => {
+        const { data } = await supabase.auth.getSession()
+        runInAction(() => {
+            this.user = data.session?.user ?? null
+            this.session = data.session ?? null
+        })
+
+        supabase.auth.onAuthStateChange((_, session) => {
+            runInAction(() => {
+                this.user = session?.user ?? null
+                this.session = session ?? null
+            })
+        })
+    }
+
+    logout = async () => {
+        const { error } = await supabase.auth.signOut()
+
+        if (error) {
+            console.error("Ошибка при выходе:", error.message)
+            runInAction(() => {
+                this.error = "Не удалось выйти из аккаунта"
+            })
+            return
+        }
+
+        runInAction(() => {
+            this.user = null
+            this.session = null
+        })
+
+        await AsyncStorage.clear()
+        router.replace("/loginScreen")
     }
 
     setEmail = (val: string) => (this.email = val)
@@ -57,16 +95,23 @@ export class AuthStore {
             password: this.password,
         })
 
-        runInAction(() => {
-            this.loading = false
-        })
-
         if (error || !signUpData?.user) {
             runInAction(() => {
                 this.error = error?.message || "Ошибка регистрации"
             })
             return
         }
+
+        runInAction(() => {
+            this.user = signUpData.user
+            this.session = signUpData.session
+        })
+
+        await this.syncLocalDataToSupabase(signUpData.session?.user.id as string)
+
+        runInAction(() => {
+            this.loading = false
+        })
 
         router.replace("/checkEmailScreen")
     }
@@ -102,6 +147,8 @@ export class AuthStore {
         await this.syncLocalDataToSupabase(data.user.id)
 
         runInAction(() => {
+            this.user = data.user
+            this.session = data.session ?? null
             this.reset()
         })
 
@@ -110,29 +157,33 @@ export class AuthStore {
 
     handleDeepLink = async (access_token: string, refresh_token: string) => {
         try {
-            const { error } = await supabase.auth.setSession({ access_token, refresh_token });
+            const { error } = await supabase.auth.setSession({ access_token, refresh_token })
 
             if (error) {
-                this.error = error.message || "Ошибка установки сессии";
-                return;
+                this.error = error.message || "Ошибка установки сессии"
+                return
             }
 
-            const { data: userData, error: userError } = await supabase.auth.getUser();
-            const userId = userData?.user?.id;
+            const { data: userData, error: userError } = await supabase.auth.getUser()
+            const userId = userData?.user?.id
 
             if (userError || !userId) {
-                this.error = "Не удалось получить ID пользователя";
-                return;
+                this.error = "Не удалось получить ID пользователя"
+                return
             }
 
-            await this.syncLocalDataToSupabase(userId);
-            await AsyncStorage.clear();
-            router.replace("/homeScreen");
+            await this.syncLocalDataToSupabase(userId)
+
+            runInAction(() => {
+                this.user = userData.user
+            })
+
+            router.replace("/homeScreen")
         } catch (err) {
-            console.error("💥 Ошибка в handleDeepLink:", err);
-            this.error = "Не удалось авторизоваться";
+            console.error("💥 Ошибка в handleDeepLink:", err)
+            this.error = "Не удалось авторизоваться"
         }
-    };
+    }
 
     private syncLocalDataToSupabase = async (userId: string) => {
         const [nativeLang, learnLang] = await Promise.all([
@@ -149,10 +200,10 @@ export class AuthStore {
                     learn_lang: learnLang,
                 })
                 .select()
-                .single();
+                .single()
 
             if (error) {
-                console.error("Ошибка upsert в users", error.message);
+                console.error("Ошибка upsert в users", error.message)
             }
         }
 
@@ -185,7 +236,13 @@ export class AuthStore {
                 await supabase.from("cards").insert(cardsToInsert)
             }
         }
+
+        await AsyncStorage.clear()
+
+        if (nativeLang) await AsyncStorage.setItem("native_lang", nativeLang)
+        if (learnLang) await AsyncStorage.setItem("learn_lang", learnLang)
     }
+
 }
 
 export const authStore = () => new AuthStore()

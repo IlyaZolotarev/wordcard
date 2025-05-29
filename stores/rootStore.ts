@@ -6,17 +6,19 @@ import { trainStore } from "./trainStore";
 import { userStore } from "./userStore";
 import { authStore } from "./authStore";
 
-const category = categoryStore();
-const user = userStore();
-const card = cardStore(category);
-const create = createStore(user);
+const auth = authStore();
+const user = userStore(auth);
+const category = categoryStore(auth);
+const card = cardStore(category, auth);
+const create = createStore(user, auth);
+const train = trainStore(auth);
 
 export const rootStore = {
   createStore: create,
   categoryStore: category,
   searchStore: searchStore(),
   cardStore: card,
-  trainStore: trainStore(),
+  trainStore: train,
   userStore: user,
-  authStore: authStore(),
+  authStore: auth,
 };

@@ -12,7 +12,7 @@ import Card from "@/components/card";
 import CardTemplate from "@/components/cardTemplate";
 import { ICard } from "@/stores/cardStore";
 import React, { createRef } from "react";
-import { useAuth } from "@/hooks/useAuth";
+
 type CardOrTemplate = ICard | { id: string };
 
 type Props = {
@@ -22,9 +22,8 @@ type Props = {
 
 const ObservedCardList = observer(({ isTemplates, templateRefs }: Props) => {
     const { categoryStore } = useStores();
-    const { user } = useAuth();
     const router = useRouter();
-    const { id } = useLocalSearchParams();
+    const { id: categoryId } = useLocalSearchParams();
     const cards = categoryStore.cards;
     const fetchCardsLoading = categoryStore.fetchCardsLoading;
     const hasMore = categoryStore.hasMore;
@@ -44,7 +43,7 @@ const ObservedCardList = observer(({ isTemplates, templateRefs }: Props) => {
 
     const loadMore = () => {
         if (!fetchCardsLoading && hasMore) {
-            categoryStore.fetchCardsByCategoryId(user, id as string);
+            categoryStore.fetchCardsByCategoryId(categoryId as string);
         }
     };
 

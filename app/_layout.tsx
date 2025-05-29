@@ -13,6 +13,8 @@ import { rootStore } from "@/stores/rootStore";
 import { Camera } from "expo-camera";
 import { useEffect } from "react";
 import * as Linking from "expo-linking";
+import { authStore } from "@/stores/authStore";
+import { useStores } from "@/stores/storeContext";
 
 let lastDeepLinkUrl: string | null = null;
 export const getLastDeepLink = () => lastDeepLinkUrl;
@@ -27,6 +29,7 @@ const theme = {
 };
 
 const Layout = () => {
+    const { authStore } = useStores();
     const router = useRouter();
     const pathname = usePathname();
     const isCameraScreen = pathname === "/cameraScreen";
@@ -36,6 +39,7 @@ const Layout = () => {
     useEffect(() => {
         (async () => {
             await Camera.requestCameraPermissionsAsync();
+            await authStore.init();
         })();
     }, []);
 

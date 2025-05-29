@@ -15,7 +15,6 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useEffect, useState, useRef } from "react";
 import { triggerShake } from "@/lib/utils";
 import { useStores } from "@/stores/storeContext";
-import { useAuth } from "@/hooks/useAuth";
 import { observer } from "mobx-react-lite";
 
 interface Props {
@@ -33,7 +32,6 @@ const EditCategoryModal = ({ visible, onClose, categoryId }: Props) => {
     );
     const [categoryName, setCategoryName] = useState("");
     const [confirmDelete, setConfirmDelete] = useState(false);
-    const { user } = useAuth();
     const deleteTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     useEffect(() => {
@@ -69,7 +67,6 @@ const EditCategoryModal = ({ visible, onClose, categoryId }: Props) => {
         }
 
         categoryStore.updateCategory(
-            user,
             categoryId,
             categoryName.trim(),
             onClose
@@ -85,7 +82,7 @@ const EditCategoryModal = ({ visible, onClose, categoryId }: Props) => {
             return;
         }
 
-        categoryStore.deleteCategory(user, categoryId, onClose);
+        categoryStore.deleteCategory(categoryId, onClose);
     };
 
     const onChangeInput = (text: string) => {

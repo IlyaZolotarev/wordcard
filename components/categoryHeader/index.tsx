@@ -14,16 +14,14 @@ import { observer } from "mobx-react-lite";
 import { useStores } from "@/stores/storeContext";
 import { useRef, useState } from "react";
 import { triggerShake } from "@/lib/utils";
-import { useAuth } from "@/hooks/useAuth";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 let debounceTimer: NodeJS.Timeout;
 
 const CategoryHeader = () => {
-    const { user } = useAuth();
     const { categoryStore, cardStore } = useStores();
     const router = useRouter();
-    const { id } = useLocalSearchParams();
+    const { id: categoryId } = useLocalSearchParams();
     const headerInputShake = useRef(new Animated.Value(0)).current;
     const [confirmDelete, setConfirmDelete] = useState(false);
     const deleteTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -34,9 +32,9 @@ const CategoryHeader = () => {
             return;
         }
 
-        if (id) {
+        if (categoryId) {
             categoryStore.resetCards();
-            categoryStore.searchCardsByWord(user, id as string);
+            categoryStore.searchCardsByWord(categoryId as string);
         }
     };
 
@@ -46,11 +44,11 @@ const CategoryHeader = () => {
 
         if (!text.trim()) {
             categoryStore.resetCards();
-            categoryStore.fetchCardsByCategoryId(user, id as string);
+            categoryStore.fetchCardsByCategoryId(categoryId as string);
             return;
         }
 
-        if (id && text.trim()) {
+        if (categoryId && text.trim()) {
             debounceTimer = setTimeout(() => {
                 handleSearch();
             }, 300);
@@ -65,7 +63,7 @@ const CategoryHeader = () => {
             }, 2000);
             return;
         }
-        cardStore.deleteSelectedCards(user, id as string);
+        cardStore.deleteSelectedCards(categoryId as string);
     };
 
     if (cardStore.selectedCards.length) {

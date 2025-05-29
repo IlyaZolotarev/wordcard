@@ -1,8 +1,8 @@
 import { makeAutoObservable, runInAction } from "mobx";
-import { User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 import { CategoryStore } from "@/stores/categoryStore";
 import AsyncStorage from "@react-native-async-storage/async-storage"
+import { AuthStore } from "@/stores/authStore";
 
 export interface ICard {
     id: string;
@@ -25,9 +25,11 @@ export class CardStore {
     selectionMode = false;
     deleteCardsLoading = false;
     categoryStore: CategoryStore;
+    authStore: AuthStore;
 
-    constructor(categoryStore: CategoryStore) {
+    constructor(categoryStore: CategoryStore, authStore: AuthStore) {
         this.categoryStore = categoryStore;
+        this.authStore = authStore;
         makeAutoObservable(this);
     }
 
@@ -75,7 +77,7 @@ export class CardStore {
         });
     };
 
-    deleteSelectedCards = async (user: User | null, categoryId: string) => {
+    deleteSelectedCards = async (categoryId: string) => {
         if (this.selectedCards.length === 0) return;
 
         runInAction(() => {
@@ -83,7 +85,7 @@ export class CardStore {
         });
 
         try {
-            if (!user) {
+            if (!this.authStore.session) {
                 const raw = await AsyncStorage.getItem(`local_cards_${categoryId}`);
                 const existing = raw ? JSON.parse(raw) : [];
 
@@ -95,7 +97,7 @@ export class CardStore {
 
                 this.resetSelection();
                 this.categoryStore.resetCards();
-                await this.categoryStore.fetchCardsByCategoryId(null, categoryId);
+                await this.categoryStore.fetchCardsByCategoryId(categoryId);
                 return;
             }
 
@@ -133,7 +135,7 @@ export class CardStore {
 
             this.resetSelection();
             this.categoryStore.resetCards();
-            await this.categoryStore.fetchCardsByCategoryId(user, categoryId);
+            await this.categoryStore.fetchCardsByCategoryId(categoryId);
 
         } catch (err) {
             console.error("Ошибка при удалении выбранных карточек:", err);
@@ -146,4 +148,4 @@ export class CardStore {
 
 }
 
-export const cardStore = (categoryStore: CategoryStore) => new CardStore(categoryStore);
+export const cardStore = (categoryStore: CategoryStore, authStore: AuthStore) => new CardStore(categoryStore, authStore);

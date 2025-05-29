@@ -7,7 +7,6 @@ import {
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useStores } from "@/stores/storeContext";
-import { useAuth } from "@/hooks/useAuth";
 import CategoryHeader from "@/components/categoryHeader";
 import ChoseCardsModal from "@/components/modals/choseCardsModal";
 import ObservedCardList from "@/components/observedCardList";
@@ -17,8 +16,7 @@ const MIN_CARDS = 4;
 
 const CategoryScreen = () => {
     const { categoryStore, cardStore } = useStores();
-    const { user } = useAuth();
-    const { id } = useLocalSearchParams();
+    const { id: categoryId } = useLocalSearchParams();
     const router = useRouter();
 
     const [isTemplates, showTemplates] = useState(false);
@@ -29,14 +27,14 @@ const CategoryScreen = () => {
     );
 
     useEffect(() => {
-        if (id) {
-            categoryStore.fetchCardsByCategoryId(user, id as string);
+        if (categoryId) {
+            categoryStore.fetchCardsByCategoryId(categoryId as string);
         }
         return () => {
             categoryStore.resetCards();
             cardStore.resetSelection();
         };
-    }, [user]);
+    }, []);
 
     useEffect(() => {
         const backHandler = BackHandler.addEventListener("hardwareBackPress", () => {
@@ -52,9 +50,9 @@ const CategoryScreen = () => {
     const navigateToTrainScreen = useCallback((cardsCount?: number) => {
         router.push({
             pathname: "/trainScreen",
-            params: { categoryId: id, cardsCount },
+            params: { categoryId, cardsCount },
         });
-    }, [id]);
+    }, [categoryId]);
 
     const onTrainHandler = () => {
         if (categoryStore.fetchCardsLoading) return;

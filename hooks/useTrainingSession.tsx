@@ -1,10 +1,8 @@
 import { useEffect, useState } from "react";
 import { TrainStore } from "@/stores/trainStore";
-import { User } from "@supabase/supabase-js";
 
 export const useTrainingSession = (
     store: TrainStore,
-    user: User | null,
     categoryId: string,
     cardsCount: string
 ) => {
@@ -14,7 +12,7 @@ export const useTrainingSession = (
 
         const load = async () => {
             if (categoryId) {
-                await store.fetchTrainCards(user, categoryId, cardsCount);
+                await store.fetchTrainCards(categoryId, cardsCount);
                 if (isMounted) setReady(true);
             }
         };
@@ -24,12 +22,12 @@ export const useTrainingSession = (
         return () => {
             isMounted = false;
         };
-    }, [user?.id, categoryId]);
+    }, [categoryId]);
 
     const current = store.currentTask;
     const next = () => store.goToNextTask();
     const submit = (isCorrect: boolean, usedHint = false) =>
-        store.submitAnswer(user, categoryId, current?.card.id || "", isCorrect, usedHint);
+        store.submitAnswer(categoryId, current?.card.id || "", isCorrect, usedHint);
 
     return {
         ready,

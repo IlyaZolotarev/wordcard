@@ -1,9 +1,9 @@
 import { makeAutoObservable, runInAction } from "mobx";
 import { supabase } from "@/lib/supabase";
-import { User } from "@supabase/supabase-js";
 import { ICard } from "@/stores/cardStore";
 import uuid from "react-native-uuid";
 import AsyncStorage from "@react-native-async-storage/async-storage"
+import { AuthStore } from "@/stores/authStore";
 
 interface TrainingTask {
     taskId: string;
@@ -28,8 +28,10 @@ export class TrainStore {
     tasks: TrainingTask[] = [];
     currentTaskIndex = 0;
     loading = false;
+    authStore: AuthStore
 
-    constructor() {
+    constructor(authStore: AuthStore) {
+        this.authStore = authStore
         makeAutoObservable(this);
     }
 
@@ -51,7 +53,7 @@ export class TrainStore {
         });
     }
 
-    async fetchTrainCards(user: User | null, categoryId: string, cardsCount: string) {
+    async fetchTrainCards(categoryId: string, cardsCount: string) {
         runInAction(() => {
             this.loading = true;
             this.resetTraining();
@@ -61,7 +63,7 @@ export class TrainStore {
         let cards: ICard[] = [];
 
         try {
-            if (!user) {
+            if (!this.authStore.session) {
                 const stored = await AsyncStorage.getItem(`local_cards_${categoryId}`);
                 const allCards: ICard[] = stored ? JSON.parse(stored) : [];
 
@@ -142,7 +144,7 @@ export class TrainStore {
         });
     }
 
-    selectAnswer(user: User | null, taskId: string, selectedCardId: string, categoryId: string) {
+    selectAnswer(taskId: string, selectedCardId: string, categoryId: string) {
         const task = this.tasks.find(t => t.taskId === taskId);
         if (!task || task.selectedCardId !== undefined) return;
 
@@ -155,11 +157,10 @@ export class TrainStore {
             task.selectedCardId = selectedCardId;
         });
 
-        this.submitAnswer(user, categoryId, task.card.id, isCorrect, task.usedHint ?? false);
+        this.submitAnswer(categoryId, task.card.id, isCorrect, task.usedHint ?? false);
     }
 
     async submitAnswer(
-        user: User | null,
         categoryId: string,
         cardId: string,
         isCorrect: boolean,
@@ -192,7 +193,7 @@ export class TrainStore {
             last_shown_at: now,
         };
 
-        if (!user) {
+        if (!this.authStore.session) {
             const stored = await AsyncStorage.getItem(`local_cards_${categoryId}`);
             const allCards: ICard[] = stored ? JSON.parse(stored) : [];
 
@@ -257,4 +258,4 @@ export class TrainStore {
     }
 }
 
-export const trainStore = () => new TrainStore();
+export const trainStore = (authStore: AuthStore) => new TrainStore(authStore);

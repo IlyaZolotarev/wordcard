@@ -2,13 +2,16 @@ import { makeAutoObservable, runInAction } from "mobx"
 import { User } from "@supabase/supabase-js"
 import { supabase } from "@/lib/supabase"
 import AsyncStorage from "@react-native-async-storage/async-storage"
+import { AuthStore } from "@/stores/authStore";
 
 export class UserStore {
     nativeLangCode = ""
     learnLangCode = ""
     loading = false
+    authStore: AuthStore
 
-    constructor() {
+    constructor(authStore: AuthStore) {
+        this.authStore = authStore
         makeAutoObservable(this)
     }
 
@@ -19,13 +22,13 @@ export class UserStore {
         });
     }
 
-    fetchLangCode = async (user: User | null) => {
+    fetchLangCode = async () => {
         runInAction(() => {
             this.loading = true
         })
 
         try {
-            if (!user) {
+            if (!this.authStore.session) {
                 const [native, learn] = await Promise.all([
                     AsyncStorage.getItem("native_lang"),
                     AsyncStorage.getItem("learn_lang")
@@ -39,7 +42,7 @@ export class UserStore {
                 const { data, error } = await supabase
                     .from("users")
                     .select("native_lang, learn_lang")
-                    .eq("id", user.id)
+                    .eq("id", this.authStore.session.user.id)
                     .single()
 
                 if (error) {
@@ -61,4 +64,4 @@ export class UserStore {
     }
 }
 
-export const userStore = () => new UserStore()
+export const userStore = (authStore: AuthStore) => new UserStore(authStore)
