@@ -1,48 +1,63 @@
-import { useEffect, useState } from "react";
-import { useStores } from "@/stores/storeContext";
-import { getLastDeepLink } from "@/app/_layout";
-import { Text, ScrollView } from "react-native";
+import { useEffect } from "react"
+import { useStores } from "@/stores/storeContext"
+import { getLastDeepLink } from "@/app/_layout"
+import { Text, View, StyleSheet, ActivityIndicator } from "react-native"
+import { observer } from "mobx-react-lite"
+import { SYNC_STATUS, type SyncStatus } from "@/stores/authStore"
 
-export default function AuthCallback() {
-    const { authStore } = useStores();
-    const [logs, setLogs] = useState<string[]>([]);
-
-    const log = (msg: string) => {
-        setLogs((prev) => [...prev, msg]);
-    };
+export default observer(function AuthCallback() {
+    const { authStore } = useStores()
 
     useEffect(() => {
-        const url = getLastDeepLink();
-        log(`🔗 URL: ${url}`);
-        if (!url) {
-            log("⚠️ Нет deep link URL");
-            return;
+        const url = getLastDeepLink()
+        const fixed = url?.replace("#", "?") ?? ""
+        const token = new URL(fixed).searchParams.get("access_token")
+        const refresh = new URL(fixed).searchParams.get("refresh_token")
+
+        if (token && refresh) {
+            authStore.handleDeepLink(token, refresh)
         }
+    }, [])
 
-        const fixed = url.replace("#", "?");
-        log(`🔧 Исправленный URL: ${fixed}`);
-
-        const token = new URL(fixed).searchParams.get("access_token");
-        const refresh = new URL(fixed).searchParams.get("refresh_token");
-        log(`🔑 Token: ${token}`);
-        log(`🔄 Refresh: ${refresh}`);
-
-        if (!token || !refresh) {
-
-            log("❌ Отсутствуют токены");
-            return;
+    const getStatusText = (status: SyncStatus, error?: string) => {
+        switch (status) {
+            case SYNC_STATUS.IDLE:
+                return "Ожидание запуска..."
+            case SYNC_STATUS.SETTING_SESSION:
+                return "Устанавливаем сессию..."
+            case SYNC_STATUS.FETCHING_USER:
+                return "Получаем пользователя..."
+            case SYNC_STATUS.SYNCING_DATA:
+                return "Синхронизация данных..."
+            case SYNC_STATUS.DONE:
+                return "Готово!"
+            case SYNC_STATUS.ERROR:
+                return `Ошибка: ${error || "Неизвестная"}`
+            default:
+                return ""
         }
-
-        authStore.handleDeepLink(token, refresh);
-    }, []);
+    }
 
     return (
-        <ScrollView style={{ padding: 16 }}>
-            {logs.map((entry, i) => (
-                <Text key={i} style={{ marginBottom: 4 }}>
-                    {entry}
-                </Text>
-            ))}
-        </ScrollView>
-    );
-}
+        <View style={styles.container}>
+            <ActivityIndicator size="large" />
+            <Text style={styles.text}>
+                {getStatusText(authStore.syncStatus, authStore.error)}
+            </Text>
+        </View>
+    )
+})
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        padding: 20,
+    },
+    text: {
+        marginTop: 20,
+        fontSize: 16,
+        textAlign: "center",
+    },
+})

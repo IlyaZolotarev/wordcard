@@ -1,24 +1,31 @@
-import { createStore } from "./createStore";
-import { categoryStore } from "./categoryStore";
-import { searchStore } from "./searchStore";
-import { cardStore } from "./cardStore";
-import { trainStore } from "./trainStore";
-import { userStore } from "./userStore";
-import { authStore } from "./authStore";
+import { createStore as createCreateStore } from "./createStore";
+import { categoryStore as createCategoryStore } from "./categoryStore";
+import { searchStore as createSearchStore } from "./searchStore";
+import { cardStore as createCardStore } from "./cardStore";
+import { trainStore as createTrainStore } from "./trainStore";
+import { userStore as createUserStore, UserStore } from "./userStore";
+import { authStore as createAuthStore, AuthStore } from "./authStore";
 
-const auth = authStore();
-const user = userStore(auth);
-const category = categoryStore(auth);
-const card = cardStore(category, auth);
-const create = createStore(user, auth);
-const train = trainStore(auth);
+export const initRootStore = () => {
+  const auth: AuthStore = createAuthStore();
+  const user: UserStore = createUserStore(auth);
+  auth.setUserStore(user);
 
-export const rootStore = {
-  createStore: create,
-  categoryStore: category,
-  searchStore: searchStore(),
-  cardStore: card,
-  trainStore: train,
-  userStore: user,
-  authStore: auth,
+  const category = createCategoryStore(auth);
+  const card = createCardStore(category, auth);
+  const create = createCreateStore(user, auth);
+  const train = createTrainStore(auth);
+  const search = createSearchStore();
+
+  return {
+    createStore: create,
+    categoryStore: category,
+    searchStore: search,
+    cardStore: card,
+    trainStore: train,
+    userStore: user,
+    authStore: auth,
+  };
 };
+
+export const rootStore = initRootStore();

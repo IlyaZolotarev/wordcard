@@ -58,10 +58,7 @@ const CategoryList = () => {
                         style={styles.categoryWrapper}
                     >
                         <View style={styles.category}>
-                            <View
-                                style={styles.categoryTitleWrapper}
-
-                            >
+                            <View style={styles.categoryTitleWrapper}>
                                 <Text style={styles.title}>{item.name}</Text>
                             </View>
                             <TouchableOpacity
@@ -78,10 +75,10 @@ const CategoryList = () => {
                                 />
                             </TouchableOpacity>
                         </View>
-                    </TouchableOpacity >
+                    </TouchableOpacity>
                 )}
             />
-            < EditCategoryModal
+            <EditCategoryModal
                 visible={!!categoryId}
                 onClose={() => setCategoryId(null)}
                 categoryId={categoryId || ""}

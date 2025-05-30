@@ -85,12 +85,6 @@ const ObservedCardList = observer(({ isTemplates, templateRefs }: Props) => {
                         return (
                             <CardTemplate
                                 ref={templateRefs.current[index]}
-                                onPress={() =>
-                                    router.push({
-                                        pathname: "/searchScreen",
-                                        params: { fromCategory: "1" },
-                                    })
-                                }
                             />
                         );
                     })()

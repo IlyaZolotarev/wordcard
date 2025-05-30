@@ -4,6 +4,7 @@ import {
     KeyboardAvoidingView,
     Platform,
     View,
+    ActivityIndicator,
 } from "react-native";
 import { Slot, usePathname, useRouter } from "expo-router";
 import { PaperProvider, MD3LightTheme } from "react-native-paper";
@@ -13,7 +14,6 @@ import { rootStore } from "@/stores/rootStore";
 import { Camera } from "expo-camera";
 import { useEffect } from "react";
 import * as Linking from "expo-linking";
-import { authStore } from "@/stores/authStore";
 import { useStores } from "@/stores/storeContext";
 
 let lastDeepLinkUrl: string | null = null;
@@ -55,6 +55,14 @@ const Layout = () => {
         return () => sub.remove();
     }, []);
 
+    if (authStore.loading) {
+        return (
+            <SafeAreaView style={styles.loaderContainer}>
+                <ActivityIndicator size="large" color="#000" />
+            </SafeAreaView>
+        );
+    }
+
     return (
         <StoreContext.Provider value={rootStore}>
             <PaperProvider theme={theme}>
@@ -95,5 +103,11 @@ const styles = StyleSheet.create({
         paddingHorizontal: 0,
         paddingTop: 0,
         paddingBottom: 0,
+    },
+    loaderContainer: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: "#fff",
     },
 });
