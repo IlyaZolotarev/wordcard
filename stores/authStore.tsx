@@ -47,16 +47,14 @@ export class AuthStore {
             this.session = data.session ?? null;
         });
 
-        if (this.session) {
-            await this.userStore?.fetchLangCode();
-        }
-
         supabase.auth.onAuthStateChange((_, session) => {
             runInAction(() => {
                 this.user = session?.user ?? null;
                 this.session = session ?? null;
             });
         });
+
+        await this.userStore?.fetchLangCode();
 
         runInAction(() => {
             this.loading = false;
@@ -143,8 +141,6 @@ export class AuthStore {
             this.session = signUpData.session ?? null;
         });
 
-        await this.syncLocalDataToSupabase(signUpData.user.id);
-
         runInAction(() => {
             this.loading = false;
         });
@@ -201,6 +197,7 @@ export class AuthStore {
                 access_token,
                 refresh_token,
             });
+
             if (error) {
                 runInAction(() => {
                     this.error = error.message || "Ошибка установки сессии";
@@ -208,6 +205,8 @@ export class AuthStore {
                 });
                 return;
             }
+
+            await this.init()
 
             runInAction(() => {
                 this.syncStatus = SYNC_STATUS.FETCHING_USER;
@@ -260,8 +259,6 @@ export class AuthStore {
                     native_lang: nativeLang,
                     learn_lang: learnLang,
                 })
-                .select()
-                .single();
 
             if (error) {
                 console.error("Ошибка upsert в users", error.message);

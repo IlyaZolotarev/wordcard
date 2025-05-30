@@ -21,7 +21,7 @@ type Props = {
 
 const MIN_SLIDER_VALUE = 4;
 
-const ChoseCardsModalComponent = ({ visible, onClose, onSubmit }: Props) => {
+const TrainModal = ({ visible, onClose, onSubmit }: Props) => {
     const { categoryStore } = useStores();
 
     const max = categoryStore.totalCardCount;
@@ -87,7 +87,7 @@ const ChoseCardsModalComponent = ({ visible, onClose, onSubmit }: Props) => {
     );
 };
 
-export default ChoseCardsModalComponent;
+export default TrainModal;
 
 const styles = StyleSheet.create({
     overlay: {

@@ -1,14 +1,10 @@
-import {
-    StyleSheet,
-    View,
-    BackHandler,
-    TouchableOpacity,
-} from "react-native";
+import { StyleSheet, View, BackHandler, TouchableOpacity } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useStores } from "@/stores/storeContext";
 import CategoryHeader from "@/components/categoryHeader";
-import ChoseCardsModal from "@/components/modals/choseCardsModal";
+import TrainModal from "@/components/modals/trainModal";
+import ImageSearchModal from "@/components/modals/imageSearchModal";
 import ObservedCardList from "@/components/observedCardList";
 import { useEffect, useState, useRef, useCallback } from "react";
 
@@ -20,11 +16,12 @@ const CategoryScreen = () => {
     const router = useRouter();
 
     const [isTemplates, showTemplates] = useState(false);
-    const [showModal, setShowModal] = useState(false);
+    const [showTrainModal, setTrainModal] = useState(false);
+    const [showSearchModal, setShowSearchModal] = useState(false);
 
-    const templateRefs = useRef<React.RefObject<{ cardTemplateShake: () => void }>[]>(
-        []
-    );
+    const templateRefs = useRef<
+        React.RefObject<{ cardTemplateShake: () => void }>[]
+    >([]);
 
     useEffect(() => {
         if (categoryId) {
@@ -37,22 +34,28 @@ const CategoryScreen = () => {
     }, []);
 
     useEffect(() => {
-        const backHandler = BackHandler.addEventListener("hardwareBackPress", () => {
-            if (cardStore.selectionMode) {
-                cardStore.resetSelection();
-                return true;
+        const backHandler = BackHandler.addEventListener(
+            "hardwareBackPress",
+            () => {
+                if (cardStore.selectionMode) {
+                    cardStore.resetSelection();
+                    return true;
+                }
+                return false;
             }
-            return false;
-        });
+        );
         return () => backHandler.remove();
     }, []);
 
-    const navigateToTrainScreen = useCallback((cardsCount?: number) => {
-        router.push({
-            pathname: "/trainScreen",
-            params: { categoryId, cardsCount },
-        });
-    }, [categoryId]);
+    const navigateToTrainScreen = useCallback(
+        (cardsCount?: number) => {
+            router.push({
+                pathname: "/trainScreen",
+                params: { categoryId, cardsCount },
+            });
+        },
+        [categoryId]
+    );
 
     const onTrainHandler = () => {
         if (categoryStore.fetchCardsLoading) return;
@@ -74,12 +77,20 @@ const CategoryScreen = () => {
             return;
         }
 
-        if (!showModal) {
-            setShowModal(true);
+        if (!showTrainModal) {
+            setTrainModal(true);
             return;
         }
 
         navigateToTrainScreen();
+    };
+
+    const onSearchImage = () => {
+        router.push({
+            pathname: "/searchScreen",
+            params: { fromCategory: "1" },
+        });
+        setShowSearchModal(false);
     };
 
     return (
@@ -87,20 +98,19 @@ const CategoryScreen = () => {
             <View style={styles.header}>
                 <CategoryHeader />
             </View>
-
-            <ObservedCardList
-                isTemplates={isTemplates}
-                templateRefs={templateRefs}
-            />
-
+            <ObservedCardList onClickTemplate={() => setShowSearchModal(true)} isTemplates={isTemplates} templateRefs={templateRefs} />
             <TouchableOpacity style={styles.trainButton} onPress={onTrainHandler}>
                 <MaterialCommunityIcons name="school" size={24} color="#000" />
             </TouchableOpacity>
-
-            <ChoseCardsModal
-                visible={showModal}
-                onClose={() => setShowModal(false)}
+            <TrainModal
+                visible={showTrainModal}
+                onClose={() => setTrainModal(false)}
                 onSubmit={navigateToTrainScreen}
+            />
+            <ImageSearchModal
+                visible={showSearchModal}
+                onClose={() => setShowSearchModal(false)}
+                onSubmit={onSearchImage}
             />
         </View>
     );

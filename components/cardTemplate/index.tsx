@@ -5,15 +5,15 @@ import {
     Animated,
     Easing,
 } from "react-native";
-import { useEffect, useRef, forwardRef, useImperativeHandle, useState } from "react";
+import { useEffect, useRef, forwardRef, useImperativeHandle } from "react";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { triggerShake } from '@/lib/utils';
-import ImageSearchModal from "@/components/modals/imageSearchModal";
-import { useRouter } from "expo-router"
 
-const CardTemplate = forwardRef((_, ref) => {
-    const router = useRouter()
-    const [showModal, setShowModal] = useState(true);
+type Props = {
+    onClick: () => void
+}
+
+const CardTemplate = forwardRef(({ onClick }: Props, ref) => {
     const opacity = useRef(new Animated.Value(0)).current;
     const scale = useRef(new Animated.Value(0.9)).current;
     const cardShake = useRef(new Animated.Value(0)).current;
@@ -38,17 +38,9 @@ const CardTemplate = forwardRef((_, ref) => {
         ]).start();
     }, []);
 
-    const handleSubmit = async () => {
-        router.push({
-            pathname: "/searchScreen",
-            params: { fromCategory: "1" },
-        })
-        setShowModal(false)
-    };
-
     return (
         <Animated.View style={[styles.animated, { opacity, transform: [{ scale }, { translateX: cardShake }] }]}>
-            <Pressable style={styles.card} onPress={() => setShowModal(true)}>
+            <Pressable style={styles.card} onPress={onClick}>
                 <View style={styles.imagePlaceholder}>
                     <MaterialCommunityIcons name="plus" size={32} color="#999" style={styles.plusIcon} />
                 </View>
@@ -63,11 +55,6 @@ const CardTemplate = forwardRef((_, ref) => {
                     </View>
                 </View>
             </Pressable>
-            <ImageSearchModal
-                visible={showModal}
-                onClose={() => setShowModal(false)}
-                onSubmit={handleSubmit}
-            />
         </Animated.View>
     );
 })

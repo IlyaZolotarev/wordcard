@@ -7,7 +7,7 @@ import {
 import { observer } from "mobx-react-lite";
 import { useStores } from "@/stores/storeContext";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import Card from "@/components/card";
 import CardTemplate from "@/components/cardTemplate";
 import { ICard } from "@/stores/cardStore";
@@ -18,11 +18,11 @@ type CardOrTemplate = ICard | { id: string };
 type Props = {
     isTemplates: boolean;
     templateRefs: React.MutableRefObject<React.RefObject<any>[]>;
+    onClickTemplate: () => void;
 };
 
-const ObservedCardList = observer(({ isTemplates, templateRefs }: Props) => {
+const ObservedCardList = observer(({ isTemplates, templateRefs, onClickTemplate }: Props) => {
     const { categoryStore } = useStores();
-    const router = useRouter();
     const { id: categoryId } = useLocalSearchParams();
     const cards = categoryStore.cards;
     const fetchCardsLoading = categoryStore.fetchCardsLoading;
@@ -84,6 +84,7 @@ const ObservedCardList = observer(({ isTemplates, templateRefs }: Props) => {
                         }
                         return (
                             <CardTemplate
+                                onClick={onClickTemplate}
                                 ref={templateRefs.current[index]}
                             />
                         );

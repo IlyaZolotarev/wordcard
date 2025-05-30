@@ -39,7 +39,10 @@ const Layout = () => {
     useEffect(() => {
         (async () => {
             await Camera.requestCameraPermissionsAsync();
-            await authStore.init();
+
+            if (pathname !== "/authCallback") {
+                await authStore.init();
+            }
         })();
     }, []);
 
