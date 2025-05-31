@@ -41,7 +41,7 @@ export class AuthStore {
         });
 
         const { data } = await supabase.auth.getSession();
-        console.log(data, 'DATA')
+
         runInAction(() => {
             this.user = data.session?.user ?? null;
             this.session = data.session ?? null;
@@ -295,10 +295,12 @@ export class AuthStore {
             }
         }
 
-        await AsyncStorage.clear();
+        const storageKeys = await AsyncStorage.getAllKeys();
+        const keysToRemove = storageKeys.filter((key) =>
+            key.startsWith("local_cards_") || key === "local_categories"
+        );
 
-        if (nativeLang) await AsyncStorage.setItem("native_lang", nativeLang);
-        if (learnLang) await AsyncStorage.setItem("learn_lang", learnLang);
+        await AsyncStorage.multiRemove(keysToRemove);
     };
 }
 

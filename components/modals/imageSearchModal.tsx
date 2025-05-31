@@ -12,8 +12,9 @@ import {
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useEffect, useRef } from "react";
 import { triggerShake } from "@/lib/utils";
-import { IconButton } from "react-native-paper"
-import { useStores } from "@/stores/storeContext"
+import { IconButton } from "react-native-paper";
+import { useStores } from "@/stores/storeContext";
+import { observer } from "mobx-react-lite";
 
 type Props = {
     visible: boolean;
@@ -21,14 +22,9 @@ type Props = {
     onSubmit: () => void;
 };
 
-export default function ImageSearchModal({
-    visible,
-    onClose,
-    onSubmit,
-}: Props) {
-    const { searchStore } = useStores()
+const ImageSearchModal = observer(({ visible, onClose, onSubmit }: Props) => {
+    const { searchStore } = useStores();
     const inputShake = useRef(new Animated.Value(0)).current;
-
 
     useEffect(() => {
         const backAction = () => {
@@ -50,13 +46,12 @@ export default function ImageSearchModal({
 
     const handleSubmit = async () => {
         if (!searchStore.searchText.trim()) {
-            triggerShake(inputShake)
-            return
+            triggerShake(inputShake);
+            return;
         }
 
-        onSubmit()
+        onSubmit();
     };
-
 
     return (
         <Modal
@@ -66,22 +61,20 @@ export default function ImageSearchModal({
             animationType="fade"
             statusBarTranslucent
         >
-            <Pressable
-                onPress={onClose}
-                style={styles.overlay}
-            >
+            <Pressable onPress={onClose} style={styles.overlay}>
                 <KeyboardAvoidingView
                     behavior={Platform.OS === "ios" ? "padding" : undefined}
                     style={styles.modalWrapper}
                 >
                     <Pressable style={styles.modal}>
-                        <MaterialCommunityIcons
-                            name="folder-outline"
-                            size={48}
-                            color="#666"
-                        />
-                        <View style={styles.searchContainer}>
-                            <Animated.View style={[styles.input, { transform: [{ translateX: inputShake }] }]}>
+                        <MaterialCommunityIcons name="image" size={36} color="#666" />
+                        <View style={styles.content}>
+                            <Animated.View
+                                style={[
+                                    styles.input,
+                                    { transform: [{ translateX: inputShake }] },
+                                ]}
+                            >
                                 <TextInput
                                     value={searchStore.searchText}
                                     onChangeText={(text) => searchStore.setSearchText(text)}
@@ -103,7 +96,9 @@ export default function ImageSearchModal({
             </Pressable>
         </Modal>
     );
-}
+});
+
+export default ImageSearchModal;
 
 const styles = StyleSheet.create({
     overlay: {
@@ -125,8 +120,7 @@ const styles = StyleSheet.create({
         padding: 20,
         alignItems: "center",
     },
-    searchContainer: {
-        flex: 1,
+    content: {
         flexDirection: "row",
         alignItems: "center",
     },
@@ -134,7 +128,7 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1,
         borderColor: "#ddd",
         flex: 1,
-        color: 'black'
+        color: "black",
     },
     searchIcon: {
         margin: 0,

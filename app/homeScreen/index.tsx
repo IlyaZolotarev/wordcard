@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 import CameraPreviewButton from "@/components/cameraPreviewButton"
-import { View, StyleSheet, TouchableOpacity } from "react-native"
+import { View, StyleSheet, TouchableOpacity, ActivityIndicator } from "react-native"
 import CategoryList from "@/components/categoryList"
 import { MaterialCommunityIcons } from "@expo/vector-icons"
 import CreateCategoryModal from "@/components/modals/createCategoryModal"
@@ -9,7 +9,7 @@ import { observer } from "mobx-react-lite"
 import MainHeader from "@/components/mainHeader"
 
 const HomeScreen = () => {
-    const { categoryStore, searchStore } = useStores()
+    const { categoryStore, searchStore, authStore } = useStores()
     const [showModal, setShowModal] = useState(false)
 
     const handleCreateCategory = (categoryName: string) => {
@@ -22,6 +22,20 @@ const HomeScreen = () => {
             searchStore.reset()
         }
     })
+
+    useEffect(() => {
+        if (!authStore.session?.user.id) {
+            authStore.init();
+        }
+    }, []);
+
+    if (authStore.loading) {
+        return (
+            <View style={styles.loaderContainer}>
+                <ActivityIndicator size="large" color="#000" />
+            </View>
+        );
+    }
 
     return (
         <View style={styles.content}>
@@ -52,6 +66,12 @@ const HomeScreen = () => {
 export default observer(HomeScreen)
 
 const styles = StyleSheet.create({
+    loaderContainer: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: "#fff",
+    },
     content: {
         flex: 1,
         position: 'relative',

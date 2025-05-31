@@ -4,8 +4,6 @@ import {
     KeyboardAvoidingView,
     Platform,
     View,
-    ActivityIndicator,
-    Alert
 } from "react-native";
 import { Slot, usePathname, useRouter } from "expo-router";
 import { PaperProvider, MD3LightTheme } from "react-native-paper";
@@ -15,8 +13,8 @@ import { rootStore } from "@/stores/rootStore";
 import { Camera } from "expo-camera";
 import { useEffect } from "react";
 import * as Linking from "expo-linking";
-import { useStores } from "@/stores/storeContext";
 import * as FileSystem from "expo-file-system";
+
 let lastDeepLinkUrl: string | null = null;
 export const getLastDeepLink = () => lastDeepLinkUrl;
 
@@ -30,7 +28,6 @@ const theme = {
 };
 
 const Layout = () => {
-    const { authStore } = useStores();
     const router = useRouter();
     const pathname = usePathname();
     const isCameraScreen = pathname === "/cameraScreen";
@@ -41,10 +38,6 @@ const Layout = () => {
     useEffect(() => {
         (async () => {
             await Camera.requestCameraPermissionsAsync();
-
-            if (pathname !== "/authCallback") {
-                await authStore.init();
-            }
         })();
     }, []);
 
@@ -60,26 +53,19 @@ const Layout = () => {
         return () => sub.remove();
     }, []);
 
-    useEffect(() => {
-        (async () => {
-            try {
-                if (FileSystem.documentDirectory) {
-                    const files = await FileSystem.readDirectoryAsync(FileSystem.documentDirectory);
-                    console.log("Файлы:", files);
-                }
-            } catch (error) {
-                console.error("❌ Ошибка чтения файлов:", error);
-            }
-        })();
-    }, []);
+    // useEffect(() => {
+    //     (async () => {
+    //         try {
+    //             if (FileSystem.documentDirectory) {
+    //                 const files = await FileSystem.readDirectoryAsync(FileSystem.documentDirectory);
+    //                 console.log("Файлы:", files);
+    //             }
+    //         } catch (error) {
+    //             console.error("❌ Ошибка чтения файлов:", error);
+    //         }
+    //     })();
+    // }, []);
 
-    if (authStore.loading) {
-        return (
-            <SafeAreaView style={styles.loaderContainer}>
-                <ActivityIndicator size="large" color="#000" />
-            </SafeAreaView>
-        );
-    }
 
     return (
         <StoreContext.Provider value={rootStore}>
@@ -121,11 +107,5 @@ const styles = StyleSheet.create({
         paddingHorizontal: 0,
         paddingTop: 0,
         paddingBottom: 0,
-    },
-    loaderContainer: {
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-        backgroundColor: "#fff",
-    },
+    }
 });
