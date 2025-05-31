@@ -41,7 +41,7 @@ export class AuthStore {
         });
 
         const { data } = await supabase.auth.getSession();
-
+        console.log(data, 'DATA')
         runInAction(() => {
             this.user = data.session?.user ?? null;
             this.session = data.session ?? null;
@@ -77,7 +77,6 @@ export class AuthStore {
             this.session = null;
         });
 
-        await AsyncStorage.clear();
         router.replace("/loginScreen");
     };
 
@@ -206,8 +205,6 @@ export class AuthStore {
                 return;
             }
 
-            await this.init()
-
             runInAction(() => {
                 this.syncStatus = SYNC_STATUS.FETCHING_USER;
             });
@@ -230,6 +227,7 @@ export class AuthStore {
             });
 
             await this.syncLocalDataToSupabase(userId);
+            await this.init()
 
             runInAction(() => {
                 this.syncStatus = SYNC_STATUS.DONE;

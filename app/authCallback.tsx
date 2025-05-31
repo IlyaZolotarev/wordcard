@@ -1,42 +1,51 @@
-import { useEffect } from "react"
-import { useStores } from "@/stores/storeContext"
-import { getLastDeepLink } from "@/app/_layout"
-import { Text, View, StyleSheet, ActivityIndicator } from "react-native"
-import { observer } from "mobx-react-lite"
-import { SYNC_STATUS, type SyncStatus } from "@/stores/authStore"
+import { useEffect } from "react";
+import { useStores } from "@/stores/storeContext";
+import { getLastDeepLink } from "@/app/_layout";
+import { Text, View, StyleSheet, ActivityIndicator, Alert } from "react-native";
+import { observer } from "mobx-react-lite";
+import { SYNC_STATUS, type SyncStatus } from "@/stores/authStore";
 
 export default observer(function AuthCallback() {
-    const { authStore } = useStores()
+    const { authStore } = useStores();
 
     useEffect(() => {
-        const url = getLastDeepLink()
-        const fixed = url?.replace("#", "?") ?? ""
-        const token = new URL(fixed).searchParams.get("access_token")
-        const refresh = new URL(fixed).searchParams.get("refresh_token")
+        const url = getLastDeepLink();
+        if (!url) return;
 
-        if (token && refresh) {
-            authStore.handleDeepLink(token, refresh)
+        try {
+            const queryString = url.split(/[#?]/)[1] ?? "";
+            const params = new URLSearchParams(queryString);
+            const token = params.get("access_token");
+            const refresh = params.get("refresh_token");
+
+            if (token && refresh) {
+                authStore.handleDeepLink(token, refresh);
+            } else {
+                console.warn("⚠️ Не удалось найти access_token или refresh_token");
+            }
+        } catch (err) {
+            console.error("❌ Ошибка при обработке deeplink:", err);
         }
-    }, [])
+    }, []);
 
     const getStatusText = (status: SyncStatus, error?: string) => {
         switch (status) {
             case SYNC_STATUS.IDLE:
-                return "Ожидание запуска..."
+                return "Ожидание запуска...";
             case SYNC_STATUS.SETTING_SESSION:
-                return "Устанавливаем сессию..."
+                return "Устанавливаем сессию...";
             case SYNC_STATUS.FETCHING_USER:
-                return "Получаем пользователя..."
+                return "Получаем пользователя...";
             case SYNC_STATUS.SYNCING_DATA:
-                return "Синхронизация данных..."
+                return "Синхронизация данных...";
             case SYNC_STATUS.DONE:
-                return "Готово!"
+                return "Готово!";
             case SYNC_STATUS.ERROR:
-                return `Ошибка: ${error || "Неизвестная"}`
+                return `Ошибка: ${error || "Неизвестная"}`;
             default:
-                return ""
+                return "";
         }
-    }
+    };
 
     return (
         <View style={styles.container}>
@@ -45,8 +54,8 @@ export default observer(function AuthCallback() {
                 {getStatusText(authStore.syncStatus, authStore.error)}
             </Text>
         </View>
-    )
-})
+    );
+});
 
 const styles = StyleSheet.create({
     container: {
@@ -60,4 +69,4 @@ const styles = StyleSheet.create({
         fontSize: 16,
         textAlign: "center",
     },
-})
+});

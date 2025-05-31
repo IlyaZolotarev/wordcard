@@ -53,13 +53,13 @@ const CreateScreen = () => {
 
                 if (typeof result !== "string" && result?.fileName && result?.arrayBuffer) {
                     await createStore.saveCardWithImageStore(result.fileName, result.arrayBuffer, categoryId);
-                    deleteTempPhoto();
+                    await deleteTempPhoto();
                 }
             } else {
                 const localResult = await compressImage(imageUri, IMAGE_MODE.LOCAL);
                 if (typeof localResult === "string") {
                     await createStore.saveCard(localResult, categoryId);
-                    deleteTempPhoto();
+                    await deleteTempPhoto();
                 }
             }
         } else {
@@ -73,12 +73,27 @@ const CreateScreen = () => {
         categoryStore.createCategory(categoryName);
     };
 
-    const deleteTempPhoto = () => {
-        if (searchStore.selectedImageUrl.startsWith("file://")) {
-            FileSystem.deleteAsync(searchStore.selectedImageUrl, { idempotent: true })
-                .catch((err) => console.warn("Ошибка при удалении старого фото:", err));
+    const deleteTempPhoto = async () => {
+        const uri = searchStore.selectedImageUrl;
+
+        if (uri && uri.startsWith("file://")) {
+            const path = uri.replace("file://", "");
+
+            try {
+                const info = await FileSystem.getInfoAsync(uri);
+                if (info.exists) {
+                    await FileSystem.deleteAsync(uri, { idempotent: true });
+                    console.log("✅ Фото удалено:", uri);
+                } else {
+                    console.log("ℹ️ Фото уже не существует:", uri);
+                }
+            } catch (err) {
+                console.warn("❌ Ошибка при удалении фото:", err);
+            }
+        } else {
+            console.log("⛔ Неверный путь для удаления:", uri);
         }
-    }
+    };
 
     const onTakePicture = (imageUrl: string) => {
         deleteTempPhoto()

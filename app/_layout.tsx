@@ -5,6 +5,7 @@ import {
     Platform,
     View,
     ActivityIndicator,
+    Alert
 } from "react-native";
 import { Slot, usePathname, useRouter } from "expo-router";
 import { PaperProvider, MD3LightTheme } from "react-native-paper";
@@ -15,7 +16,7 @@ import { Camera } from "expo-camera";
 import { useEffect } from "react";
 import * as Linking from "expo-linking";
 import { useStores } from "@/stores/storeContext";
-
+import * as FileSystem from "expo-file-system";
 let lastDeepLinkUrl: string | null = null;
 export const getLastDeepLink = () => lastDeepLinkUrl;
 
@@ -34,7 +35,8 @@ const Layout = () => {
     const pathname = usePathname();
     const isCameraScreen = pathname === "/cameraScreen";
     const isOnboardingScreen = pathname === "/onboardingScreen";
-    const showNavigation = !isCameraScreen && !isOnboardingScreen;
+    const isAuthCallback = pathname === "/authCallback";
+    const showNavigation = !isCameraScreen && !isOnboardingScreen && !isAuthCallback;
 
     useEffect(() => {
         (async () => {
@@ -56,6 +58,19 @@ const Layout = () => {
         });
 
         return () => sub.remove();
+    }, []);
+
+    useEffect(() => {
+        (async () => {
+            try {
+                if (FileSystem.documentDirectory) {
+                    const files = await FileSystem.readDirectoryAsync(FileSystem.documentDirectory);
+                    console.log("Файлы:", files);
+                }
+            } catch (error) {
+                console.error("❌ Ошибка чтения файлов:", error);
+            }
+        })();
     }, []);
 
     if (authStore.loading) {
